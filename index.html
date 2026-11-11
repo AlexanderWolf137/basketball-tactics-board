@@ -1,0 +1,2992 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>篮球战术板</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #1a1a2e; color: #e0e0e0; overflow: hidden; height: 100vh; display: flex; flex-direction: column; user-select: none; }
+
+/* ── Header ── */
+#header { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; padding: 8px 16px; background: #16213e; border-bottom: 1px solid #0f3460; min-height: 44px; flex-shrink: 0; }
+#header .title { flex: 1 1 160px; min-width: 0; font-size: 16px; font-weight: 600; color: #e94560; letter-spacing: 1px; }
+#header .title input { background: transparent; border: 1px solid transparent; color: #e0e0e0; font-size: 16px; font-weight: 600; width: 100%; padding: 2px 6px; border-radius: 4px; transition: border-color .15s, box-shadow .15s, background .15s; }
+#header .title input:hover { border-color: #0f3460; background: #1a1a2e; }
+#header .title input:focus { border-color: #e94560; background: #1a1a2e; box-shadow: 0 0 0 3px rgba(233,69,96,.15); outline: none; }
+#header .actions { display: flex; gap: 8px; flex-shrink: 0; }
+.btn { padding: 6px 14px; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; transition: all .15s; display: flex; align-items: center; gap: 5px; }
+.btn-primary { background: #e94560; color: #fff; }
+.btn-primary:hover { background: #c73650; }
+.btn-secondary { background: #0f3460; color: #a0b4d0; }
+.btn-secondary:hover { background: #1a4a80; color: #fff; }
+.btn-danger { background: #6b1530; color: #ff8a9e; }
+.btn-danger:hover { background: #8b2040; }
+.btn-sm { padding: 4px 10px; font-size: 12px; }
+
+/* ── Main layout ── */
+#main { display: flex; flex: 1; overflow: hidden; }
+
+/* ── Toolbar ── */
+#toolbar { width: 200px; background: #16213e; border-right: 1px solid #0f3460; padding: 12px; overflow-y: auto; flex-shrink: 0; display: flex; flex-direction: column; gap: 14px; }
+.tool-section { background: #1a1a2e; border-radius: 8px; padding: 10px; }
+.tool-section h3 { font-size: 12px; text-transform: uppercase; color: #7a8ba8; margin-bottom: 8px; letter-spacing: 1px; }
+.tool-row { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
+.tool-row:last-child { margin-bottom: 0; }
+.tool-row label { font-size: 13px; color: #a0b4d0; flex: 1; }
+.tool-row input[type=number] { width: 50px; background: #16213e; border: 1px solid #0f3460; color: #e0e0e0; padding: 3px 6px; border-radius: 4px; font-size: 13px; text-align: center; }
+.tool-row input[type=color] { width: 32px; height: 26px; border: 1px solid #0f3460; border-radius: 4px; cursor: pointer; background: #16213e; padding: 1px; }
+
+.tool-btn-group { display: flex; flex-wrap: wrap; gap: 4px; }
+.tool-btn { padding: 6px 0; border: 2px solid #0f3460; background: transparent; color: #a0b4d0; border-radius: 6px; cursor: pointer; font-size: 12px; transition: all .15s; flex: 1; min-width: 80px; text-align: center; }
+.tool-btn:hover { border-color: #e94560; color: #e94560; }
+.tool-btn.active { background: #e94560; border-color: #e94560; color: #fff; }
+.tool-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.tool-btn:disabled:hover { border-color: #0f3460; color: #a0b4d0; }
+
+.court-toggle { display: flex; border-radius: 6px; overflow: hidden; border: 1px solid #0f3460; }
+.court-toggle button { flex: 1; padding: 6px; background: transparent; border: none; color: #a0b4d0; cursor: pointer; font-size: 12px; transition: all .15s; }
+.court-toggle button.active { background: #0f3460; color: #fff; }
+
+/* ── Canvas area ── */
+#canvas-wrap { flex: 1; display: flex; align-items: center; justify-content: center; background: #111; position: relative; overflow: hidden; }
+#canvas { cursor: crosshair; border-radius: 4px; box-shadow: 0 4px 24px rgba(0,0,0,.5); }
+
+/* ── Bottom panel ── */
+#bottom { flex-shrink: 0; background: #16213e; border-top: 1px solid #0f3460; }
+
+/* Playback controls */
+#playback { display: flex; align-items: center; gap: 10px; padding: 8px 16px; border-bottom: 1px solid #0f3460; }
+#playback .ctrl-btn { width: 32px; height: 32px; border-radius: 50%; border: none; background: #0f3460; color: #a0b4d0; cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; transition: all .15s; }
+#playback .ctrl-btn:hover { background: #e94560; color: #fff; }
+#playback .ctrl-btn.active { background: #e94560; color: #fff; }
+#progress-wrap { flex: 1; display: flex; align-items: center; gap: 8px; }
+#progress-bar { flex: 1; height: 6px; background: #0f3460; border-radius: 3px; cursor: pointer; position: relative; }
+#progress-fill { height: 100%; background: #e94560; border-radius: 3px; width: 0; transition: width .05s linear; }
+#progress-bar .handle { width: 14px; height: 14px; background: #e94560; border: 2px solid #fff; border-radius: 50%; position: absolute; top: 50%; transform: translate(-50%, -50%); cursor: grab; display: none; }
+#frame-info { font-size: 12px; color: #7a8ba8; min-width: 60px; text-align: right; }
+#speed-select { background: #0f3460; color: #a0b4d0; border: 1px solid #0f3460; padding: 3px 6px; border-radius: 4px; font-size: 12px; cursor: pointer; }
+
+/* Per-frame caption bar */
+#caption-bar { display: flex; align-items: center; gap: 8px; padding: 8px 16px; background: #141c33; border-bottom: 1px solid #0f3460; }
+#caption-bar .caption-tag { flex-shrink: 0; font-size: 11px; font-weight: 700; letter-spacing: .1em; color: #e94560; background: rgba(233,69,96,.12); border: 1px solid rgba(233,69,96,.4); padding: 3px 9px; border-radius: 4px; }
+#caption-input { flex: 1; min-width: 0; background: #1a1a2e; border: 1px solid #0f3460; color: #e8eefc; padding: 6px 10px; border-radius: 6px; font-size: 13px; transition: border-color .15s, box-shadow .15s; }
+#caption-input:focus { outline: none; border-color: #e94560; box-shadow: 0 0 0 3px rgba(233,69,96,.15); }
+#caption-input::placeholder { color: #5a6b80; }
+#caption-count { flex-shrink: 0; font-size: 11px; color: #5a6b80; min-width: 42px; text-align: right; font-variant-numeric: tabular-nums; }
+#caption-clear { flex-shrink: 0; width: 24px; height: 24px; border-radius: 50%; border: 1px solid #0f3460; background: #0f3460; color: #7a8ba8; cursor: pointer; font-size: 11px; line-height: 1; display: flex; align-items: center; justify-content: center; transition: all .15s; }
+#caption-clear:hover { background: #e94560; border-color: #e94560; color: #fff; }
+
+/* Frame list */
+#frame-list { display: flex; gap: 8px; padding: 10px 16px; overflow-x: auto; align-items: stretch; min-height: 80px; }
+.frame-thumb { width: 100px; min-width: 100px; height: 60px; background: #1a1a2e; border: 2px solid #0f3460; border-radius: 6px; cursor: pointer; position: relative; display: flex; align-items: center; justify-content: center; transition: all .15s; overflow: hidden; }
+.frame-thumb:hover { border-color: #4a6fa5; }
+.frame-thumb.active { border-color: #e94560; box-shadow: 0 0 8px rgba(233,69,96,.3); }
+.frame-thumb canvas { width: 100%; height: 100%; }
+.frame-thumb .frame-label { position: absolute; bottom: 2px; left: 0; right: 0; text-align: center; font-size: 10px; color: #7a8ba8; background: rgba(22,33,62,.8); }
+.frame-thumb .frame-delete { position: absolute; top: 2px; right: 2px; width: 16px; height: 16px; border-radius: 50%; background: rgba(233,69,96,.8); color: #fff; border: none; cursor: pointer; font-size: 10px; display: none; align-items: center; justify-content: center; line-height: 1; }
+.frame-thumb:hover .frame-delete { display: flex; }
+.frame-thumb .frame-caption { position: absolute; top: 2px; left: 2px; padding: 1px 5px; border-radius: 4px; background: rgba(233,69,96,.85); color: #fff; font-size: 9px; line-height: 1.4; display: none; align-items: center; pointer-events: none; }
+#add-frame-btn { width: 100px; min-width: 100px; height: 60px; background: transparent; border: 2px dashed #0f3460; border-radius: 6px; cursor: pointer; color: #7a8ba8; font-size: 24px; display: flex; align-items: center; justify-content: center; transition: all .15s; }
+#add-frame-btn:hover { border-color: #e94560; color: #e94560; }
+
+/* ── Dropdown menu ── */
+.dropdown { position: relative; display: inline-block; }
+.dropdown-menu { display: none; position: absolute; top: 100%; right: 0; margin-top: 4px; background: #1a1a2e; border: 1px solid #0f3460; border-radius: 8px; overflow: hidden; min-width: 160px; box-shadow: 0 8px 24px rgba(0,0,0,.4); z-index: 100; }
+.dropdown-menu.show { display: block; }
+.dropdown-item { padding: 8px 14px; cursor: pointer; font-size: 13px; color: #a0b4d0; transition: all .1s; display: flex; align-items: center; gap: 8px; }
+.dropdown-item:hover { background: #0f3460; color: #fff; }
+
+/* ── Context info overlay ── */
+#info-overlay { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); background: rgba(22,33,62,.9); color: #a0b4d0; padding: 6px 16px; border-radius: 20px; font-size: 12px; pointer-events: none; opacity: 0; transition: opacity .3s; z-index: 10; }
+#info-overlay.show { opacity: 1; }
+
+/* ── Modal ── */
+.modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.6); z-index: 200; align-items: center; justify-content: center; }
+.modal-overlay.show { display: flex; }
+.modal { background: #16213e; border-radius: 12px; padding: 24px; min-width: 300px; max-width: 500px; border: 1px solid #0f3460; }
+.modal h2 { font-size: 16px; margin-bottom: 16px; color: #e94560; }
+.modal .form-row { margin-bottom: 12px; }
+.modal .form-row label { display: block; font-size: 12px; color: #7a8ba8; margin-bottom: 4px; }
+.modal .form-row input, .modal .form-row select { width: 100%; background: #1a1a2e; border: 1px solid #0f3460; color: #e0e0e0; padding: 6px 10px; border-radius: 6px; font-size: 13px; }
+.modal .form-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
+
+/* scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: #1a1a2e; }
+::-webkit-scrollbar-thumb { background: #0f3460; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #1a4a80; }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div id="header">
+  <div class="title"><input id="tactic-name" value="新战术" spellcheck="false" maxlength="40" title="战术名称：随 JSON 保存，并显示在导出图左上角"></div>
+  <div class="actions">
+    <button class="btn btn-secondary" onclick="saveProject()">💾 保存</button>
+    <button class="btn btn-secondary" onclick="document.getElementById('load-input').click()">📂 加载</button>
+    <input type="file" id="load-input" accept=".json" style="display:none" onchange="loadProject(event)">
+    <div class="dropdown">
+      <button class="btn btn-primary" onclick="toggleExportMenu()">📤 导出 ▾</button>
+      <div class="dropdown-menu" id="export-menu">
+        <div class="dropdown-item" onclick="exportCurrentPNG()">🖼️ 当前帧 PNG</div>
+        <div class="dropdown-item" onclick="exportAllPNG()">🖼️ 全部帧 PNG</div>
+        <div class="dropdown-item" onclick="exportGIF()">🎞️ GIF 动图</div>
+      </div>
+    </div>
+    <button class="btn btn-secondary btn-sm" onclick="toggleSettings()">⚙️</button>
+  </div>
+</div>
+
+<!-- Main -->
+<div id="main">
+  <!-- Toolbar -->
+  <div id="toolbar">
+    <!-- Court type -->
+    <div class="tool-section">
+      <h3>球场</h3>
+      <div class="court-toggle">
+        <button id="btn-half" class="active" onclick="setCourtType('half')">半场</button>
+        <button id="btn-full" onclick="setCourtType('full')">全场</button>
+      </div>
+    </div>
+
+    <!-- Players -->
+    <div class="tool-section">
+      <h3>球员设置</h3>
+      <div class="tool-row">
+        <label>🔴 进攻方</label>
+        <input type="number" id="offense-count" value="5" min="0" max="5" onchange="setPlayerCount('offense',this.value)">
+      </div>
+      <div class="tool-row">
+        <label>🔵 防守方</label>
+        <input type="number" id="defense-count" value="5" min="0" max="5" onchange="setPlayerCount('defense',this.value)">
+      </div>
+      <div class="tool-row" style="margin-top:6px">
+        <label style="font-size:11px;color:#5a6b80">点击球场放置，拖拽移动</label>
+      </div>
+    </div>
+
+    <!-- Player action panel (shown when player selected) -->
+    <div class="tool-section" id="player-action-panel" style="display:none;border:2px solid #e94560;">
+      <h3 id="player-action-title">球员操作</h3>
+      <div class="tool-btn-group" style="margin-bottom:8px;">
+        <button class="tool-btn" id="btn-select-mode" onclick="enterSelectMode()" style="background:#0f3460;color:#fff;">🖱 选择</button>
+        <button class="tool-btn" id="btn-set-ball" onclick="setPlayerHasBall()">🏀 持球</button>
+        <button class="tool-btn" id="btn-clear-ball" onclick="clearPlayerHasBall()" style="display:none;">❌ 放下球</button>
+      </div>
+      <div class="tool-btn-group">
+        <button class="tool-btn" id="btn-action-move" onclick="startActionFromPlayer('move')">🏃 跑位</button>
+        <button class="tool-btn" id="btn-action-pass" onclick="startActionFromPlayer('pass')">📤 传球</button>
+        <button class="tool-btn" id="btn-action-dribble" onclick="startActionFromPlayer('dribble')">⛹ 运球</button>
+        <button class="tool-btn" id="btn-action-screen" onclick="startActionFromPlayer('screen')">🧱 挡拆</button>
+      </div>
+      <div class="tool-row" style="margin-top:8px;">
+        <label style="font-size:11px;color:#5a6b80" id="player-action-hint">选中球员后可执行操作</label>
+      </div>
+    </div>
+
+    <!-- Arrow color -->
+    <div class="tool-section">
+      <h3>箭头颜色</h3>
+      <div class="tool-row">
+        <label>当前颜色</label>
+        <input type="color" id="arrow-color" value="#FFD700" onchange="state.currentArrowColor=this.value">
+      </div>
+      <div class="tool-btn-group" style="margin-top:4px">
+        <button class="btn btn-sm btn-secondary" style="background:#FFD700;border:none;color:#000;font-size:11px" onclick="setArrowColor('#FFD700')">金</button>
+        <button class="btn btn-sm btn-secondary" style="background:#FF6B6B;border:none;color:#fff;font-size:11px" onclick="setArrowColor('#FF6B6B')">红</button>
+        <button class="btn btn-sm btn-secondary" style="background:#4ECDC4;border:none;color:#000;font-size:11px" onclick="setArrowColor('#4ECDC4')">青</button>
+        <button class="btn btn-sm btn-secondary" style="background:#A8E6CF;border:none;color:#000;font-size:11px" onclick="setArrowColor('#A8E6CF')">绿</button>
+      </div>
+    </div>
+
+    <!-- Frame duration -->
+    <div class="tool-section">
+      <h3>帧设置</h3>
+      <div class="tool-row">
+        <label>持续时间(秒)</label>
+        <input type="number" id="frame-duration" value="1.5" min="0.3" max="5" step="0.1" onchange="setFrameDuration(this.value)">
+      </div>
+    </div>
+
+    <!-- Shortcuts help -->
+    <div class="tool-section" style="margin-top:auto">
+      <h3>快捷键</h3>
+      <div style="font-size:11px;color:#5a6b80;line-height:1.8">
+        <div><kbd style="color:#a0b4d0">Space</kbd> 播放/暂停</div>
+        <div><kbd style="color:#a0b4d0">← →</kbd> 上/下一帧</div>
+        <div><kbd style="color:#a0b4d0">Ctrl+Z</kbd> 撤销</div>
+        <div><kbd style="color:#a0b4d0">Ctrl+Y</kbd> 重做</div>
+        <div><kbd style="color:#a0b4d0">Del</kbd> 删除选中</div>
+        <div><kbd style="color:#a0b4d0">Esc</kbd> 取消绘制</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Canvas area -->
+  <div id="canvas-wrap">
+    <canvas id="canvas"></canvas>
+    <div id="info-overlay"></div>
+  </div>
+</div>
+
+<!-- Bottom panel -->
+<div id="bottom">
+  <div id="playback">
+    <button class="ctrl-btn" onclick="prevFrame()" title="上一帧">⏮</button>
+    <button class="ctrl-btn" id="btn-play" onclick="togglePlay()" title="播放/暂停">▶</button>
+    <button class="ctrl-btn" onclick="nextFrame()" title="下一帧">⏭</button>
+    <button class="ctrl-btn" onclick="stopPlayback()" title="停止">⏹</button>
+    <div id="progress-wrap">
+      <div id="progress-bar" onmousedown="startProgressDrag(event)">
+        <div id="progress-fill"></div>
+      </div>
+    </div>
+    <span id="frame-info">帧 1/1</span>
+    <select id="speed-select" onchange="setPlaybackSpeed(this.value)">
+      <option value="0.25">0.25x</option>
+      <option value="0.5">0.5x</option>
+      <option value="1" selected>1x</option>
+      <option value="1.5">1.5x</option>
+      <option value="2">2x</option>
+    </select>
+  </div>
+  <div id="caption-bar">
+    <span class="caption-tag">字幕</span>
+    <input id="caption-input" type="text" maxlength="80" spellcheck="false"
+      placeholder="描述本帧的战术细节，例如：1 号借 5 号掩护切出，接 2 号传球准备投篮"
+      title="本帧字幕：显示在球场下方，并随 PNG / GIF 一起导出">
+    <span id="caption-count">0/80</span>
+    <button id="caption-clear" title="清空本帧字幕">✕</button>
+  </div>
+  <div id="frame-list">
+    <div class="frame-thumb active" data-frame="0">
+      <canvas width="100" height="60"></canvas>
+      <div class="frame-label">帧 1</div>
+      <button class="frame-delete" onclick="deleteFrame(0,event)">✕</button>
+    </div>
+    <button id="add-frame-btn" onclick="addFrame()">+</button>
+  </div>
+</div>
+
+<!-- Settings modal -->
+<div class="modal-overlay" id="settings-modal">
+  <div class="modal">
+    <h2>设置</h2>
+    <div class="form-row">
+      <label>球员名称（进攻方，逗号分隔）</label>
+      <input id="offense-names" value="1,2,3,4,5" placeholder="例: PG,SG,SF,PF,C">
+    </div>
+    <div class="form-row">
+      <label>球员名称（防守方，逗号分隔）</label>
+      <input id="defense-names" value="1,2,3,4,5" placeholder="例: PG,SG,SF,PF,C">
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-secondary" onclick="toggleSettings()">取消</button>
+      <button class="btn btn-primary" onclick="applySettings()">应用</button>
+    </div>
+  </div>
+</div>
+
+<!-- GIF.js CDN -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.js"></script>
+
+<script>
+// ============================================================
+// CONFIG
+// ============================================================
+// FIBA Official Basketball Rules, Art. 2 + Diagrams 1/2. All values in metres.
+const FIBA = {
+  length: 28, width: 15,
+  line: 0.05,
+  centreCircleR: 1.80,
+  centreLineOverhang: 0.15,
+  keyWidth: 4.90, keyDepth: 5.80,
+  ftCircleR: 1.80,
+  basketFromEnd: 1.575,
+  ringR: 0.225,
+  backboardWidth: 1.80, backboardFromEnd: 1.20, backboardDepth: 0.10,
+  threeR: 6.75, threeCornerInset: 0.90,
+  noChargeR: 1.25, noChargeLegEnd: 1.20,
+  laneTicks: [1.75, 3.85, 4.70],
+  neutralZone: [2.60, 3.00],
+  laneTickLength: 0.10,
+  throwInFromEnd: 8.325, throwInLength: 0.15,
+};
+
+const COURT_PPM = 46;
+function mToPx(m) { return m * COURT_PPM; }
+
+const CFG = {
+  court: {
+    m: COURT_PPM,
+    border: 50, topOffset: 30,
+    width: mToPx(FIBA.width),
+    height: mToPx(FIBA.length / 2),
+    fullCourtHeight: mToPx(FIBA.length),
+    canvasW: mToPx(FIBA.width) + 100,
+    canvasH: mToPx(FIBA.length / 2) + 60,
+    fullCourtCanvasH: mToPx(FIBA.length) + 60,
+    lineW: mToPx(FIBA.line),
+  },
+  player: { radius: 20, strokeWidth: 3 },
+  ball: { radius: 10 },
+  arrow: { lineWidth: 2.5, headSize: 12, waveAmplitude: 3, waveFrequency: 0.12 },
+  colors: {
+    court: '#C8956C', courtBorder: '#A07040', line: '#ffffff',
+    paint: '#C4834F',
+    offense: '#E74C3C', defense: '#3498DB',
+    ball: '#E67E22', ballLine: '#8B4513',
+    arrow: '#FFD700', arrowHighlight: '#FF6B6B',
+    selected: '#00FF88',
+    rim: '#FF6B35', backboard: '#E8E8E8',
+  },
+  hitRadius: 24,
+};
+
+const ARROW_PRESETS = {
+  move:    { dashed: false, arrowHead: 'triangle', canCurve: true,  wave: false, label: '跑位' },
+  pass:    { dashed: true,  arrowHead: 'triangle', canCurve: false, wave: false, label: '传球' },
+  dribble: { dashed: false, arrowHead: 'triangle', canCurve: true,  wave: true,  label: '运球' },
+  screen:  { dashed: false, arrowHead: 'bar',      canCurve: true,  wave: false, label: '挡拆' },
+};
+
+// ============================================================
+// STATE
+// ============================================================
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
+
+function defaultFrame() {
+  return { id: uid(), players: [], ball: { x: 400, y: 400, holderId: null }, actions: [], duration: 1500, caption: '' };
+}
+
+const state = {
+  tactic: { name: '新战术', courtType: 'half', frames: [defaultFrame()] },
+  courtStates: { half: null, full: null }, // independent state per court type
+  currentFrameIdx: 0,
+  tool: 'select',
+  currentArrowColor: '#FFD700',
+  interaction: { type: 'idle', data: {} },
+  playback: { playing: false, progress: 0, speed: 1, animId: null, startTime: 0 },
+  selectedArrowId: null,
+  selectedPlayerId: null,
+  undoStack: [],
+  redoStack: [],
+  playerNames: { offense: ['1','2','3','4','5'], defense: ['1','2','3','4','5'] },
+};
+
+function currentFrame() { return state.tactic.frames[state.currentFrameIdx]; }
+function courtArea() {
+  const b = CFG.court.border, t = CFG.court.topOffset;
+  if (state.tactic.courtType === 'full') {
+    return { x: b, y: t, w: CFG.court.width, h: CFG.court.fullCourtHeight };
+  }
+  return { x: b, y: t, w: CFG.court.width, h: CFG.court.height };
+}
+
+function getBasketPosition() {
+  const area = courtArea();
+  return { x: area.x + area.w / 2, y: area.y + area.h - mToPx(FIBA.basketFromEnd) };
+}
+
+// ============================================================
+// UTILITY
+// ============================================================
+function dist(x1, y1, x2, y2) { return Math.hypot(x2 - x1, y2 - y1); }
+function lerp(a, b, t) { return a + (b - a) * t; }
+function lerpPt(a, b, t) { return { x: lerp(a.x, b.x, t), y: lerp(a.y, b.y, t) }; }
+function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+function degToRad(d) { return d * Math.PI / 180; }
+
+function quadBezier(t, p0, p1, p2) {
+  return {
+    x: (1-t)*(1-t)*p0.x + 2*(1-t)*t*p1.x + t*t*p2.x,
+    y: (1-t)*(1-t)*p0.y + 2*(1-t)*t*p1.y + t*t*p2.y,
+  };
+}
+
+function quadBezierAngle(t, p0, p1, p2) {
+  const dx = 2*(1-t)*(p1.x-p0.x) + 2*t*(p2.x-p1.x);
+  const dy = 2*(1-t)*(p1.y-p0.y) + 2*t*(p2.y-p1.y);
+  return Math.atan2(dy, dx);
+}
+
+function quadBezierLength(p0, p1, p2, samples=20) {
+  let len = 0, prev = p0;
+  for (let i = 1; i <= samples; i++) {
+    const pt = quadBezier(i/samples, p0, p1, p2);
+    len += dist(prev.x, prev.y, pt.x, pt.y);
+    prev = pt;
+  }
+  return len;
+}
+
+function cubicBezier(t, p0, p1, p2, p3) {
+  const u = 1-t;
+  return {
+    x: u*u*u*p0.x + 3*u*u*t*p1.x + 3*u*t*t*p2.x + t*t*t*p3.x,
+    y: u*u*u*p0.y + 3*u*u*t*p1.y + 3*u*t*t*p2.y + t*t*t*p3.y,
+  };
+}
+
+function samplePath(points, count) {
+  if (points.length < 2) return points.slice();
+  const result = [];
+  for (let i = 0; i < count; i++) {
+    const t = i / (count - 1);
+    const segFloat = t * (points.length - 1);
+    const seg = Math.min(Math.floor(segFloat), points.length - 2);
+    const localT = segFloat - seg;
+    result.push(lerpPt(points[seg], points[seg + 1], localT));
+  }
+  return result;
+}
+
+function catmullRomChain(points, samples) {
+  if (points.length < 2) return points.slice();
+  if (points.length === 2) return samplePath(points, samples);
+  const result = [];
+  const segs = points.length - 1;
+  const perSeg = Math.max(4, Math.floor(samples / segs));
+  for (let i = 0; i < segs; i++) {
+    const p0 = points[Math.max(0, i - 1)];
+    const p1 = points[i];
+    const p2 = points[i + 1];
+    const p3 = points[Math.min(points.length - 1, i + 2)];
+    const count = (i === segs - 1) ? perSeg : perSeg;
+    for (let j = 0; j < count; j++) {
+      const t = j / count;
+      const t2 = t * t, t3 = t2 * t;
+      result.push({
+        x: 0.5 * ((2*p1.x) + (-p0.x+p2.x)*t + (2*p0.x-5*p1.x+4*p2.x-p3.x)*t2 + (-p0.x+3*p1.x-3*p2.x+p3.x)*t3),
+        y: 0.5 * ((2*p1.y) + (-p0.y+p2.y)*t + (2*p0.y-5*p1.y+4*p2.y-p3.y)*t2 + (-p0.y+3*p1.y-3*p2.y+p3.y)*t3),
+      });
+    }
+  }
+  result.push(points[points.length - 1]);
+  return result;
+}
+
+function getActionPath(action, samples=50) {
+  const start = { x: action.startX, y: action.startY };
+  const end = { x: action.endX, y: action.endY };
+  const cps = action.controlPoints || [];
+
+  if (cps.length === 0) {
+    return samplePath([start, end], samples);
+  } else if (cps.length === 1) {
+    const pts = [];
+    for (let i = 0; i < samples; i++) {
+      pts.push(quadBezier(i / (samples - 1), start, cps[0], end));
+    }
+    return pts;
+  } else {
+    const allPts = [start, ...cps, end];
+    return catmullRomChain(allPts, samples);
+  }
+}
+
+function getPathAngleAtEnd(action) {
+  const path = getActionPath(action, 20);
+  const n = path.length;
+  if (n < 2) return 0;
+  return Math.atan2(path[n-1].y - path[n-2].y, path[n-1].x - path[n-2].x);
+}
+
+function showInfo(msg, duration=2000) {
+  const el = document.getElementById('info-overlay');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(el._timer);
+  el._timer = setTimeout(() => el.classList.remove('show'), duration);
+}
+
+// ============================================================
+// UNDO / REDO
+// ============================================================
+function saveUndo() {
+  state.undoStack.push(JSON.stringify(state.tactic));
+  if (state.undoStack.length > 50) state.undoStack.shift();
+  state.redoStack = [];
+}
+
+function undo() {
+  if (!state.undoStack.length) return;
+  state.redoStack.push(JSON.stringify(state.tactic));
+  state.tactic = JSON.parse(state.undoStack.pop());
+  state.currentFrameIdx = clamp(state.currentFrameIdx, 0, state.tactic.frames.length - 1);
+  state.selectedArrowId = null;
+  state.selectedPlayerId = null;
+  renderAll();
+  updateFrameList();
+}
+
+function redo() {
+  if (!state.redoStack.length) return;
+  state.undoStack.push(JSON.stringify(state.tactic));
+  state.tactic = JSON.parse(state.redoStack.pop());
+  state.currentFrameIdx = clamp(state.currentFrameIdx, 0, state.tactic.frames.length - 1);
+  state.selectedArrowId = null;
+  state.selectedPlayerId = null;
+  renderAll();
+  updateFrameList();
+}
+
+// ============================================================
+// CANVAS SETUP
+// ============================================================
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+let dpr = window.devicePixelRatio || 1;
+
+function resizeCanvas() {
+  const wrap = document.getElementById('canvas-wrap');
+  const isFull = state.tactic.courtType === 'full';
+  // For full court, swap dimensions for landscape orientation
+  const physW = isFull ? CFG.court.fullCourtCanvasH : CFG.court.canvasW;
+  const physH = isFull ? CFG.court.canvasW : CFG.court.canvasH;
+  const aspect = physW / physH;
+  let w = wrap.clientWidth - 40;
+  let h = wrap.clientHeight - 40;
+  if (w / h > aspect) { w = h * aspect; } else { h = w / aspect; }
+  w = Math.max(400, Math.floor(w));
+  h = Math.max(300, Math.floor(h));
+  canvas.style.width = w + 'px';
+  canvas.style.height = h + 'px';
+  canvas.width = physW * dpr;
+  canvas.height = physH * dpr;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  renderAll();
+}
+
+function canvasCoords(e) {
+  const rect = canvas.getBoundingClientRect();
+  const isFull = state.tactic.courtType === 'full';
+  const physW = isFull ? CFG.court.fullCourtCanvasH : CFG.court.canvasW;
+  const physH = isFull ? CFG.court.canvasW : CFG.court.canvasH;
+  let x = (e.clientX - rect.left) * (physW / rect.width);
+  let y = (e.clientY - rect.top) * (physH / rect.height);
+  if (isFull) {
+    // Inverse of the render transform: screen (X, Y) -> court (Y, physW - X)
+    return { x: y, y: physW - x };
+  }
+  return { x, y };
+}
+
+// ============================================================
+// PHASE 1: COURT RENDERING
+// ============================================================
+function drawCourt() {
+  const area = courtArea();
+  const isFull = state.tactic.courtType === 'full';
+  const canvasH = isFull ? CFG.court.fullCourtCanvasH : CFG.court.canvasH;
+
+  // Run-off surround, then the playing floor
+  ctx.fillStyle = CFG.colors.court;
+  ctx.fillRect(0, 0, CFG.court.canvasW, canvasH);
+  ctx.fillStyle = '#D4A06A';
+  ctx.fillRect(area.x, area.y, area.w, area.h);
+
+  ctx.setLineDash([]);
+  ctx.lineCap = 'butt';
+
+  if (isFull) drawFullCourt(area);
+  else drawHalfCourt(area);
+
+  // Boundary drawn last so the endline/sideline sits on top of the paint
+  ctx.strokeStyle = CFG.colors.line;
+  ctx.lineWidth = CFG.court.lineW;
+  ctx.strokeRect(area.x, area.y, area.w, area.h);
+}
+
+// One basket end, drawn from its endline into the court.
+// dir = -1 for the bottom end (play goes up), +1 for the top end (play goes down).
+function drawEndZone(area, baseY, dir) {
+  const midX = area.x + area.w / 2;
+  const Y = m => baseY + dir * mToPx(m);
+  const LW = CFG.court.lineW;
+  const keyHalf = mToPx(FIBA.keyWidth / 2);
+  const keyLeft = midX - keyHalf;
+  const keyRight = midX + keyHalf;
+  const keyDepth = mToPx(FIBA.keyDepth);
+  const keyTop = Math.min(baseY, Y(FIBA.keyDepth));
+  const basketY = Y(FIBA.basketFromEnd);
+  // Semicircles open away from the endline: top half for dir -1, bottom half for dir +1.
+  const arcFrom = dir === -1 ? Math.PI : 0;
+  const arcTo = dir === -1 ? Math.PI * 2 : Math.PI;
+
+  ctx.setLineDash([]);
+  ctx.strokeStyle = CFG.colors.line;
+  ctx.lineWidth = LW;
+
+  // Restricted area (the paint)
+  ctx.fillStyle = CFG.colors.paint;
+  ctx.fillRect(keyLeft, keyTop, keyHalf * 2, keyDepth);
+  ctx.strokeRect(keyLeft, keyTop, keyHalf * 2, keyDepth);
+
+  // Free-throw circle: solid outside the key, dashed inside it
+  const ftR = mToPx(FIBA.ftCircleR);
+  const ftY = Y(FIBA.keyDepth);
+  ctx.beginPath();
+  ctx.arc(midX, ftY, ftR, arcFrom, arcTo);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(midX, ftY, ftR, arcTo, arcFrom + Math.PI * 2);
+  ctx.setLineDash([mToPx(0.30), mToPx(0.30)]);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Rebound places along the key, with the solid neutral zone block
+  const tick = mToPx(FIBA.laneTickLength);
+  FIBA.laneTicks.forEach(m => {
+    const y = Y(m);
+    ctx.beginPath();
+    ctx.moveTo(keyLeft - tick, y); ctx.lineTo(keyLeft, y);
+    ctx.moveTo(keyRight, y); ctx.lineTo(keyRight + tick, y);
+    ctx.stroke();
+  });
+  const nzA = Y(FIBA.neutralZone[0]);
+  const nzB = Y(FIBA.neutralZone[1]);
+  ctx.fillStyle = CFG.colors.line;
+  ctx.fillRect(keyLeft - tick, Math.min(nzA, nzB), tick, Math.abs(nzB - nzA));
+  ctx.fillRect(keyRight, Math.min(nzA, nzB), tick, Math.abs(nzB - nzA));
+
+  // Three-point line: two corner straights joined by the 6.75 m arc
+  const cornerOff = mToPx(FIBA.width / 2 - FIBA.threeCornerInset);
+  const threeR = mToPx(FIBA.threeR);
+  const joinDy = Math.sqrt(threeR * threeR - cornerOff * cornerOff);
+  const joinY = basketY + dir * joinDy;
+  ctx.beginPath();
+  ctx.moveTo(midX - cornerOff, baseY); ctx.lineTo(midX - cornerOff, joinY);
+  ctx.moveTo(midX + cornerOff, baseY); ctx.lineTo(midX + cornerOff, joinY);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(midX, basketY, threeR,
+    Math.atan2(joinY - basketY, -cornerOff),
+    Math.atan2(joinY - basketY, cornerOff),
+    dir === 1);
+  ctx.stroke();
+
+  // No-charge semi-circle: 1.25 m arc plus 0.375 m legs ending 1.20 m from the endline
+  const ncR = mToPx(FIBA.noChargeR);
+  ctx.beginPath();
+  ctx.arc(midX, basketY, ncR, arcFrom, arcTo);
+  ctx.moveTo(midX - ncR, basketY); ctx.lineTo(midX - ncR, Y(FIBA.noChargeLegEnd));
+  ctx.moveTo(midX + ncR, basketY); ctx.lineTo(midX + ncR, Y(FIBA.noChargeLegEnd));
+  ctx.stroke();
+
+  // Backboard and ring
+  const bbHalf = mToPx(FIBA.backboardWidth / 2);
+  const bbY = Y(FIBA.backboardFromEnd);
+  const bbDepth = mToPx(FIBA.backboardDepth);
+  ctx.fillStyle = CFG.colors.backboard;
+  ctx.fillRect(midX - bbHalf, Math.min(bbY, bbY - dir * bbDepth), bbHalf * 2, bbDepth);
+  ctx.strokeStyle = CFG.colors.courtBorder;
+  ctx.lineWidth = 1;
+  ctx.strokeRect(midX - bbHalf, Math.min(bbY, bbY - dir * bbDepth), bbHalf * 2, bbDepth);
+
+  ctx.beginPath();
+  ctx.moveTo(midX, bbY); ctx.lineTo(midX, basketY);
+  ctx.strokeStyle = CFG.colors.rim;
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(midX, basketY, mToPx(FIBA.ringR), 0, Math.PI * 2);
+  ctx.lineWidth = 2.5;
+  ctx.stroke();
+}
+
+function drawHalfCourt(area) {
+  const midX = area.x + area.w / 2;
+  const topLine = area.y;
+  const baseline = area.y + area.h;
+
+  drawEndZone(area, baseline, -1);
+
+  // Midcourt line and the half of the centre circle that falls in this half
+  ctx.strokeStyle = CFG.colors.line;
+  ctx.lineWidth = CFG.court.lineW;
+  ctx.setLineDash([]);
+  const r = mToPx(FIBA.centreCircleR);
+  ctx.fillStyle = CFG.colors.paint;
+  ctx.beginPath();
+  ctx.arc(midX, topLine, r, 0, Math.PI);
+  ctx.fill();
+  ctx.stroke();
+}
+
+function drawFullCourt(area) {
+  const midX = area.x + area.w / 2;
+  const midY = area.y + area.h / 2;
+
+  drawEndZone(area, area.y + area.h, -1);
+  drawEndZone(area, area.y, 1);
+
+  ctx.strokeStyle = CFG.colors.line;
+  ctx.lineWidth = CFG.court.lineW;
+  ctx.setLineDash([]);
+
+  // Centre circle and centre line, which overhangs each sideline by 0.15 m
+  const r = mToPx(FIBA.centreCircleR);
+  ctx.fillStyle = CFG.colors.paint;
+  ctx.beginPath();
+  ctx.arc(midX, midY, r, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+
+  const over = mToPx(FIBA.centreLineOverhang);
+  ctx.beginPath();
+  ctx.moveTo(area.x - over, midY);
+  ctx.lineTo(area.x + area.w + over, midY);
+  ctx.stroke();
+
+  // Throw-in marks on the sideline opposite the scorer's table
+  const tick = mToPx(FIBA.throwInLength);
+  [area.y + mToPx(FIBA.throwInFromEnd), area.y + area.h - mToPx(FIBA.throwInFromEnd)].forEach(y => {
+    ctx.beginPath();
+    ctx.moveTo(area.x - tick, y);
+    ctx.lineTo(area.x, y);
+    ctx.stroke();
+  });
+}
+
+
+// ============================================================
+// PHASE 1: PLAYER MANAGEMENT
+// ============================================================
+function initPlayers() {
+  const frame = currentFrame();
+  const area = courtArea();
+  const midX = area.x + area.w / 2;
+  const baseline = area.y + area.h;
+
+  frame.players = [];
+
+  const offCount = parseInt(document.getElementById('offense-count').value) || 5;
+  const defCount = parseInt(document.getElementById('defense-count').value) || 5;
+
+  // Offense set in metres from the endline / centre of the court:
+  // point guard above the arc, two wings outside the three-point line, two bigs on the blocks.
+  const offPositions = [
+    { x: 0, y: 8.6 },
+    { x: -5.3, y: 6.1 },
+    { x: 5.3, y: 6.1 },
+    { x: -2.9, y: 2.3 },
+    { x: 2.9, y: 2.3 },
+  ];
+
+  // Defense sits goal-side of each matchup
+  const defPositions = [
+    { x: 0, y: 7.3 },
+    { x: -4.6, y: 5.0 },
+    { x: 4.6, y: 5.0 },
+    { x: -2.4, y: 1.9 },
+    { x: 2.4, y: 1.9 },
+  ];
+
+  for (let i = 0; i < offCount; i++) {
+    const spot = offPositions[i] || offPositions[offPositions.length - 1];
+    frame.players.push({
+      id: uid(), team: 'offense', number: state.playerNames.offense[i] || (i+1).toString(),
+      x: midX + mToPx(spot.x), y: baseline - mToPx(spot.y), hasBall: i === 0,
+    });
+  }
+
+  for (let i = 0; i < defCount; i++) {
+    const spot = defPositions[i] || defPositions[defPositions.length - 1];
+    frame.players.push({
+      id: uid(), team: 'defense', number: state.playerNames.defense[i] || (i+1).toString(),
+      x: midX + mToPx(spot.x), y: baseline - mToPx(spot.y), hasBall: false,
+    });
+  }
+
+  // Ball follows the player who has it
+  const ballHolder = frame.players.find(p => p.hasBall);
+  if (ballHolder) {
+    frame.ball.x = ballHolder.x;
+    frame.ball.y = ballHolder.y;
+    frame.ball.holderId = ballHolder.id;
+  }
+}
+
+function drawPlayers(players) {
+  players.forEach(p => {
+    const r = CFG.player.radius;
+    const color = p.team === 'offense' ? CFG.colors.offense : CFG.colors.defense;
+    const isSelected = p.id === state.selectedPlayerId;
+
+    // Shadow
+    ctx.beginPath();
+    ctx.arc(p.x + 2, p.y + 2, r, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(0,0,0,0.3)';
+    ctx.fill();
+
+    // Body
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+    ctx.fillStyle = color;
+    ctx.fill();
+    ctx.strokeStyle = isSelected ? CFG.colors.selected : '#fff';
+    ctx.lineWidth = isSelected ? 3 : CFG.player.strokeWidth;
+    ctx.stroke();
+
+    // Number
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 13px -apple-system, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(p.number, p.x, p.y);
+  });
+}
+
+function drawBall(ball) {
+  const r = CFG.ball.radius;
+  let bx = ball.x, by = ball.y;
+
+  // If holder exists, draw near holder
+  if (ball.holderId) {
+    const frame = currentFrame();
+    const holder = frame.players.find(p => p.id === ball.holderId);
+    if (holder) {
+      bx = holder.x + CFG.player.radius + r + 2;
+      by = holder.y - CFG.player.radius / 2;
+    }
+  }
+
+  // Shadow
+  ctx.beginPath();
+  ctx.arc(bx + 1, by + 1, r, 0, Math.PI * 2);
+  ctx.fillStyle = 'rgba(0,0,0,0.2)';
+  ctx.fill();
+
+  // Ball
+  ctx.beginPath();
+  ctx.arc(bx, by, r, 0, Math.PI * 2);
+  ctx.fillStyle = CFG.colors.ball;
+  ctx.fill();
+  ctx.strokeStyle = CFG.colors.ballLine;
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  // Lines on ball
+  ctx.beginPath();
+  ctx.moveTo(bx - r, by);
+  ctx.lineTo(bx + r, by);
+  ctx.strokeStyle = CFG.colors.ballLine;
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.moveTo(bx, by - r);
+  ctx.lineTo(bx, by + r);
+  ctx.stroke();
+}
+
+// ============================================================
+// PHASE 2: ARROW SYSTEM
+// ============================================================
+function drawArrow(action, progress = 1) {
+  const preset = ARROW_PRESETS[action.type];
+  if (!preset) return;
+
+  const path = getActionPath(action, 60);
+  const visibleCount = Math.max(2, Math.ceil(path.length * progress));
+  const visiblePath = path.slice(0, visibleCount);
+
+  ctx.save();
+  ctx.strokeStyle = action.color || CFG.colors.arrow;
+  ctx.fillStyle = action.color || CFG.colors.arrow;
+  ctx.lineWidth = CFG.arrow.lineWidth;
+
+  if (preset.dashed) {
+    ctx.setLineDash([8, 5]);
+  } else {
+    ctx.setLineDash([]);
+  }
+
+  // Draw the line (skip for dribble - dribble only shows wave)
+  if (!preset.wave) {
+    ctx.beginPath();
+    visiblePath.forEach((pt, i) => {
+      if (i === 0) ctx.moveTo(pt.x, pt.y);
+      else ctx.lineTo(pt.x, pt.y);
+    });
+    ctx.stroke();
+  }
+
+  // Wave overlay for dribble
+  if (preset.wave) {
+    drawWaveOverlay(action, visiblePath);
+  }
+
+  ctx.setLineDash([]);
+
+  // Arrow head
+  if (progress >= 0.95) {
+    const endPt = path[path.length - 1];
+    const prevPt = path[path.length - 2];
+    const angle = Math.atan2(endPt.y - prevPt.y, endPt.x - prevPt.x);
+
+    if (preset.arrowHead === 'triangle') {
+      drawTriangleHead(endPt, angle, action.color || CFG.colors.arrow);
+    } else if (preset.arrowHead === 'bar') {
+      drawBarHead(endPt, angle, action.color || CFG.colors.arrow);
+    }
+  }
+
+  // Keypoint handles for the selected arrow
+  if (action.id === state.selectedArrowId && progress >= 1) {
+    const color = action.color || CFG.colors.arrow;
+
+    // start — bound to the player, shown as a locked dashed ring
+    ctx.beginPath();
+    ctx.arc(action.startX, action.startY, 5, 0, Math.PI * 2);
+    ctx.setLineDash([3, 3]);
+    ctx.strokeStyle = '#999';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // turning points — draggable, hollow
+    (action.controlPoints || []).forEach(cp => {
+      ctx.beginPath();
+      ctx.arc(cp.x, cp.y, 5, 0, Math.PI * 2);
+      ctx.fillStyle = '#fff';
+      ctx.fill();
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    });
+
+    // endpoint — draggable, filled
+    ctx.beginPath();
+    ctx.arc(action.endX, action.endY, 6, 0, Math.PI * 2);
+    ctx.fillStyle = color;
+    ctx.fill();
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  }
+
+  ctx.restore();
+}
+
+function drawTriangleHead(tip, angle, color) {
+  const size = CFG.arrow.headSize;
+  ctx.beginPath();
+  ctx.moveTo(tip.x, tip.y);
+  ctx.lineTo(tip.x - Math.cos(angle - 0.4) * size, tip.y - Math.sin(angle - 0.4) * size);
+  ctx.lineTo(tip.x - Math.cos(angle + 0.4) * size, tip.y - Math.sin(angle + 0.4) * size);
+  ctx.closePath();
+  ctx.fillStyle = color;
+  ctx.fill();
+}
+
+function drawBarHead(tip, angle, color) {
+  const barLen = 12;
+  const perpAngle = angle + Math.PI / 2;
+  ctx.beginPath();
+  ctx.moveTo(tip.x - Math.cos(perpAngle) * barLen, tip.y - Math.sin(perpAngle) * barLen);
+  ctx.lineTo(tip.x + Math.cos(perpAngle) * barLen, tip.y + Math.sin(perpAngle) * barLen);
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 3;
+  ctx.stroke();
+}
+
+// Dribble waves are drawn by resampling the path at a fixed arc-length step.
+// Sampling the incoming polyline directly would alias (and so change apparent
+// amplitude/period) whenever the path is longer than wavelength * pointsPerCycle.
+function drawWaveOverlay(action, path) {
+  if (!path || path.length < 2) return;
+
+  const wavelength = 22;        // px per cycle along the path
+  const amplitude = CFG.arrow.waveAmplitude;
+  const pointsPerCycle = 16;
+  const step = wavelength / pointsPerCycle;
+
+  const cum = [0];
+  for (let i = 1; i < path.length; i++) {
+    cum.push(cum[i - 1] + dist(path[i - 1].x, path[i - 1].y, path[i].x, path[i].y));
+  }
+  const total = cum[cum.length - 1];
+  if (total < 1) return;
+
+  // Per-vertex normals averaged from the neighbouring segments, so the offset
+  // direction varies smoothly instead of kinking at every polyline vertex.
+  const normals = path.map((p, i) => {
+    const prev = path[Math.max(0, i - 1)];
+    const next = path[Math.min(path.length - 1, i + 1)];
+    const dx = next.x - prev.x;
+    const dy = next.y - prev.y;
+    const len = Math.hypot(dx, dy) || 1;
+    return { x: -dy / len, y: dx / len };
+  });
+
+  const count = Math.max(2, Math.round(total / step) + 1);
+  let seg = 1;
+
+  ctx.save();
+  ctx.strokeStyle = action.color || CFG.colors.arrow;
+  ctx.lineWidth = CFG.arrow.lineWidth;
+  ctx.setLineDash([]);
+  ctx.beginPath();
+
+  for (let k = 0; k < count; k++) {
+    const s = (k / (count - 1)) * total;
+    while (seg < cum.length - 1 && cum[seg] < s) seg++;
+
+    const segLen = (cum[seg] - cum[seg - 1]) || 1;
+    const t = clamp((s - cum[seg - 1]) / segLen, 0, 1);
+    const a = path[seg - 1], b = path[seg];
+    const n = {
+      x: normals[seg - 1].x + (normals[seg].x - normals[seg - 1].x) * t,
+      y: normals[seg - 1].y + (normals[seg].y - normals[seg - 1].y) * t,
+    };
+    const nLen = Math.hypot(n.x, n.y) || 1;
+
+    const wave = Math.sin((s / wavelength) * Math.PI * 2) * amplitude;
+    const wx = a.x + (b.x - a.x) * t + (n.x / nLen) * wave;
+    const wy = a.y + (b.y - a.y) * t + (n.y / nLen) * wave;
+
+    if (k === 0) ctx.moveTo(wx, wy);
+    else ctx.lineTo(wx, wy);
+  }
+
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawActions(actions, progress = 1) {
+  actions.forEach(a => drawArrow(a, progress));
+}
+
+// Drawing preview
+function drawPreview() {
+  const { type, data } = state.interaction;
+  if (type !== 'drawing' || !data.startPt) return;
+
+  const curPt = data.currentPt || data.startPt;
+  const arrowType = state.tool;
+  const preset = ARROW_PRESETS[arrowType];
+
+  ctx.save();
+  ctx.strokeStyle = state.currentArrowColor;
+  ctx.fillStyle = state.currentArrowColor;
+  ctx.lineWidth = CFG.arrow.lineWidth;
+  ctx.globalAlpha = 0.6;
+
+  if (preset.dashed) ctx.setLineDash([8, 5]);
+  else ctx.setLineDash([]);
+
+  // Draw line/curve (skip solid line for dribble - show only wave)
+  const cps = data.controlPoints || [];
+  if (!preset.wave) {
+    ctx.beginPath();
+    ctx.moveTo(data.startPt.x, data.startPt.y);
+
+    if (cps.length === 0) {
+      ctx.lineTo(curPt.x, curPt.y);
+    } else if (cps.length === 1) {
+      // Quadratic bezier preview
+      for (let i = 1; i <= 40; i++) {
+        const t = i / 40;
+        const pt = quadBezier(t, data.startPt, cps[0], curPt);
+        ctx.lineTo(pt.x, pt.y);
+      }
+    } else {
+      const allPts = [data.startPt, ...cps, curPt];
+      const smooth = catmullRomChain(allPts, 60);
+      smooth.forEach((pt, i) => {
+        if (i === 0) ctx.moveTo(pt.x, pt.y);
+        else ctx.lineTo(pt.x, pt.y);
+      });
+    }
+    ctx.stroke();
+  } else {
+    // For dribble preview, draw wave
+    let previewPath;
+    if (cps.length === 0) {
+      previewPath = samplePath([data.startPt, curPt], 60);
+    } else {
+      const allPts = [data.startPt, ...cps, curPt];
+      previewPath = catmullRomChain(allPts, 60);
+    }
+    drawWaveOverlay({ color: state.currentArrowColor }, previewPath);
+  }
+
+  // Draw control point handles
+  cps.forEach(cp => {
+    ctx.beginPath();
+    ctx.arc(cp.x, cp.y, 4, 0, Math.PI * 2);
+    ctx.fillStyle = '#fff';
+    ctx.globalAlpha = 0.8;
+    ctx.fill();
+  });
+
+  ctx.restore();
+}
+
+// ============================================================
+// PHASE 3: FRAME SYSTEM
+// ============================================================
+function addFrame() {
+  saveUndo();
+  const frame = currentFrame();
+  const newFrame = defaultFrame();
+
+  // Inherit player positions from current frame's action endpoints
+  newFrame.players = frame.players.map(p => {
+    const action = frame.actions.find(a => a.playerId === p.id);
+    if (action) {
+      // For pass actions, the passer doesn't move (only the ball transfers)
+      if (action.type === 'pass') {
+        return { ...p, id: uid() };
+      }
+      // For other actions (move, dribble, screen), update position
+      return { ...p, x: action.endX, y: action.endY, id: uid() };
+    }
+    return { ...p, id: uid() };
+  });
+
+  // Handle ball possession
+  // Check if there's a pass action that transfers the ball
+  const passAction = frame.actions.find(a => a.type === 'pass' && a.transferBall && a.targetPlayerId);
+  
+  if (passAction) {
+    // Ball transfers to target player
+    const passerInOld = frame.players.find(p => p.id === passAction.playerId);
+    
+    // Find the actual target player (the one receiving the pass)
+    const actualTarget = frame.players.find(p => p.id === passAction.targetPlayerId);
+    const actualTargetInNew = newFrame.players.find(p => p.number === actualTarget?.number && p.team === actualTarget?.team);
+    
+    if (actualTargetInNew) {
+      newFrame.ball = { x: actualTargetInNew.x, y: actualTargetInNew.y, holderId: actualTargetInNew.id };
+      actualTargetInNew.hasBall = true;
+    }
+  } else if (frame.ball.holderId) {
+    // No pass, ball stays with current holder
+    const oldHolder = frame.players.find(p => p.id === frame.ball.holderId);
+    if (oldHolder) {
+      const newHolder = newFrame.players.find(p => p.number === oldHolder.number && p.team === oldHolder.team);
+      if (newHolder) {
+        newFrame.ball = { x: newHolder.x, y: newHolder.y, holderId: newHolder.id };
+        newHolder.hasBall = true;
+      }
+    }
+  } else {
+    newFrame.ball = { ...frame.ball };
+  }
+
+  state.tactic.frames.splice(state.currentFrameIdx + 1, 0, newFrame);
+  state.currentFrameIdx++;
+  state.selectedArrowId = null;
+  state.selectedPlayerId = null;
+  renderAll();
+  updateFrameList();
+  showInfo(`已添加帧 ${state.currentFrameIdx + 1}`);
+}
+
+function deleteFrame(idx, event) {
+  if (event) event.stopPropagation();
+  if (state.tactic.frames.length <= 1) { showInfo('至少保留一帧'); return; }
+  saveUndo();
+  state.tactic.frames.splice(idx, 1);
+  if (state.currentFrameIdx >= state.tactic.frames.length) {
+    state.currentFrameIdx = state.tactic.frames.length - 1;
+  }
+  state.selectedArrowId = null;
+  state.selectedPlayerId = null;
+  renderAll();
+  updateFrameList();
+  showInfo(`已删除帧`);
+}
+
+function duplicateFrame(idx) {
+  saveUndo();
+  const src = state.tactic.frames[idx];
+  const dup = JSON.parse(JSON.stringify(src));
+  dup.id = uid();
+  dup.players.forEach(p => p.id = uid());
+  dup.actions.forEach(a => a.id = uid());
+  state.tactic.frames.splice(idx + 1, 0, dup);
+  state.currentFrameIdx = idx + 1;
+  renderAll();
+  updateFrameList();
+  showInfo(`已复制帧`);
+}
+
+function switchFrame(idx) {
+  if (idx < 0 || idx >= state.tactic.frames.length) return;
+  state.currentFrameIdx = idx;
+  state.selectedArrowId = null;
+  state.selectedPlayerId = null;
+  state.interaction = { type: 'idle', data: {} };
+  renderAll();
+  updateFrameList();
+}
+
+function updateFrameList() {
+  const list = document.getElementById('frame-list');
+  const addBtn = document.getElementById('add-frame-btn');
+
+  // Remove all thumbs
+  list.querySelectorAll('.frame-thumb').forEach(el => el.remove());
+
+  // Create thumbs
+  state.tactic.frames.forEach((frame, idx) => {
+    const thumb = document.createElement('div');
+    thumb.className = 'frame-thumb' + (idx === state.currentFrameIdx ? ' active' : '');
+    thumb.dataset.frame = idx;
+    thumb.onclick = () => switchFrame(idx);
+    thumb.ondblclick = () => duplicateFrame(idx);
+
+    const miniCanvas = document.createElement('canvas');
+    miniCanvas.width = 100;
+    miniCanvas.height = 60;
+    thumb.appendChild(miniCanvas);
+
+    const label = document.createElement('div');
+    label.className = 'frame-label';
+    label.textContent = `帧 ${idx + 1}`;
+    thumb.appendChild(label);
+
+    const chip = document.createElement('div');
+    chip.className = 'frame-caption';
+    chip.textContent = '字';
+    const cap = (frame.caption || '').trim();
+    chip.title = cap;
+    chip.style.display = cap ? 'flex' : 'none';
+    thumb.appendChild(chip);
+
+    if (state.tactic.frames.length > 1) {
+      const delBtn = document.createElement('button');
+      delBtn.className = 'frame-delete';
+      delBtn.textContent = '✕';
+      delBtn.onclick = (e) => deleteFrame(idx, e);
+      thumb.appendChild(delBtn);
+    }
+
+    list.insertBefore(thumb, addBtn);
+
+    // Draw thumbnail
+    drawThumbnail(miniCanvas, frame);
+  });
+
+  // Update frame info
+  document.getElementById('frame-info').textContent = `帧 ${state.currentFrameIdx + 1}/${state.tactic.frames.length}`;
+  syncCaptionUI();
+  syncNameUI();
+}
+
+function syncCaptionUI() {
+  const input = document.getElementById('caption-input');
+  // Never clobber the field while the user is typing in it
+  if (document.activeElement !== input) input.value = currentFrame().caption || '';
+  document.getElementById('caption-count').textContent = `${input.value.length}/80`;
+  captionSessionOpen = false;
+}
+
+function syncNameUI() {
+  const input = document.getElementById('tactic-name');
+  if (document.activeElement !== input) input.value = state.tactic.name || '';
+  const name = (state.tactic.name || '').trim();
+  document.title = (name ? name + ' · ' : '') + '篮球战术板';
+}
+
+function refreshCaptionChip() {
+  const thumb = document.querySelector(`.frame-thumb[data-frame="${state.currentFrameIdx}"]`);
+  if (!thumb) return;
+  const chip = thumb.querySelector('.frame-caption');
+  const cap = (currentFrame().caption || '').trim();
+  chip.title = cap;
+  chip.style.display = cap ? 'flex' : 'none';
+}
+
+// One undo snapshot per continuous typing session, not per keystroke
+let captionSessionOpen = false;
+
+function drawThumbnail(miniCanvas, frame) {
+  const mctx = miniCanvas.getContext('2d');
+  const mw = miniCanvas.width, mh = miniCanvas.height;
+  const isFull = state.tactic.courtType === 'full';
+
+  // Background
+  mctx.fillStyle = '#C8956C';
+  mctx.fillRect(0, 0, mw, mh);
+
+  let scaleX, scaleY;
+  if (isFull) {
+    // Same orientation as the board: court (x, y) -> thumb (mw - y*scaleY, x*scaleX)
+    scaleX = mh / CFG.court.canvasW;
+    scaleY = mw / CFG.court.fullCourtCanvasH;
+    mctx.save();
+    mctx.translate(mw, 0);
+    mctx.rotate(Math.PI / 2);
+  } else {
+    scaleX = mw / CFG.court.canvasW;
+    scaleY = mh / CFG.court.canvasH;
+  }
+
+  const area = courtArea();
+  mctx.strokeStyle = '#fff';
+  mctx.lineWidth = 1;
+  mctx.strokeRect(area.x * scaleX, area.y * scaleY, area.w * scaleX, area.h * scaleY);
+
+  frame.players.forEach(p => {
+    mctx.beginPath();
+    mctx.arc(p.x * scaleX, p.y * scaleY, isFull ? 1.5 : 3, 0, Math.PI * 2);
+    mctx.fillStyle = p.team === 'offense' ? CFG.colors.offense : CFG.colors.defense;
+    mctx.fill();
+  });
+
+  if (!frame.ball.holderId) {
+    mctx.beginPath();
+    mctx.arc(frame.ball.x * scaleX, frame.ball.y * scaleY, isFull ? 1 : 2, 0, Math.PI * 2);
+    mctx.fillStyle = CFG.colors.ball;
+    mctx.fill();
+  }
+
+  frame.actions.forEach(a => {
+    mctx.beginPath();
+    mctx.moveTo(a.startX * scaleX, a.startY * scaleY);
+    mctx.lineTo(a.endX * scaleX, a.endY * scaleY);
+    mctx.strokeStyle = a.color || CFG.colors.arrow;
+    mctx.lineWidth = isFull ? 0.5 : 1;
+    mctx.stroke();
+  });
+
+  if (isFull) mctx.restore();
+}
+
+// ============================================================
+// PHASE 3: ANIMATION SYSTEM
+// ============================================================
+function togglePlay() {
+  if (state.playback.playing) {
+    pausePlayback();
+  } else {
+    startPlayback();
+  }
+}
+
+function startPlayback() {
+  if (state.tactic.frames.length <= 1) { showInfo('至少需要2帧才能播放'); return; }
+  state.playback.playing = true;
+  state.playback.startTime = performance.now();
+  state.playback.progress = 0;
+  document.getElementById('btn-play').textContent = '⏸';
+  document.getElementById('btn-play').classList.add('active');
+  animateLoop();
+}
+
+function pausePlayback() {
+  state.playback.playing = false;
+  document.getElementById('btn-play').textContent = '▶';
+  document.getElementById('btn-play').classList.remove('active');
+  if (state.playback.animId) {
+    cancelAnimationFrame(state.playback.animId);
+    state.playback.animId = null;
+  }
+}
+
+function stopPlayback() {
+  pausePlayback();
+  state.playback.progress = 0;
+  renderAll();
+  updateProgress();
+}
+
+function animateLoop() {
+  if (!state.playback.playing) return;
+
+  const now = performance.now();
+  const elapsed = (now - state.playback.startTime) * state.playback.speed;
+  const frame = currentFrame();
+  const duration = frame.duration || 1500;
+  state.playback.progress = Math.min(elapsed / duration, 1);
+
+  renderAll();
+  updateProgress();
+
+  if (state.playback.progress >= 1) {
+    // Move to next frame
+    if (state.currentFrameIdx < state.tactic.frames.length - 1) {
+      state.currentFrameIdx++;
+      state.playback.startTime = now;
+      state.playback.progress = 0;
+      updateFrameList();
+    } else {
+      // Loop back to start
+      state.currentFrameIdx = 0;
+      state.playback.startTime = now;
+      state.playback.progress = 0;
+      updateFrameList();
+    }
+  }
+
+  state.playback.animId = requestAnimationFrame(animateLoop);
+}
+
+function updateProgress() {
+  const totalFrames = state.tactic.frames.length;
+  const overallProgress = (state.currentFrameIdx + state.playback.progress) / totalFrames;
+  document.getElementById('progress-fill').style.width = (overallProgress * 100) + '%';
+  document.getElementById('frame-info').textContent = `帧 ${state.currentFrameIdx + 1}/${totalFrames}`;
+}
+
+function prevFrame() {
+  if (state.currentFrameIdx > 0) {
+    switchFrame(state.currentFrameIdx - 1);
+  }
+}
+
+function nextFrame() {
+  if (state.currentFrameIdx < state.tactic.frames.length - 1) {
+    switchFrame(state.currentFrameIdx + 1);
+  }
+}
+
+function setPlaybackSpeed(val) {
+  state.playback.speed = parseFloat(val);
+}
+
+function startProgressDrag(e) {
+  if (state.tactic.frames.length <= 1) return;
+  const bar = document.getElementById('progress-bar');
+  const rect = bar.getBoundingClientRect();
+
+  function update(ev) {
+    const x = clamp((ev.clientX - rect.left) / rect.width, 0, 1);
+    const totalFrames = state.tactic.frames.length;
+    const frameFloat = x * totalFrames;
+    const frameIdx = clamp(Math.floor(frameFloat), 0, totalFrames - 1);
+    if (frameIdx !== state.currentFrameIdx) {
+      switchFrame(frameIdx);
+    }
+  }
+
+  update(e);
+
+  function onMove(ev) { update(ev); }
+  function onUp() {
+    document.removeEventListener('mousemove', onMove);
+    document.removeEventListener('mouseup', onUp);
+  }
+  document.addEventListener('mousemove', onMove);
+  document.addEventListener('mouseup', onUp);
+}
+
+// ============================================================
+// PHASE 4: EXPORT
+// ============================================================
+function exportCurrentPNG() {
+  renderAll();
+  const link = document.createElement('a');
+  link.download = `${fileNameBase()}_帧${state.currentFrameIdx + 1}.png`;
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+  showInfo('已导出当前帧 PNG');
+  closeExportMenu();
+}
+
+function exportAllPNG() {
+  const savedIdx = state.currentFrameIdx;
+  state.tactic.frames.forEach((frame, idx) => {
+    state.currentFrameIdx = idx;
+    renderAll();
+    const link = document.createElement('a');
+    link.download = `${fileNameBase()}_帧${idx + 1}.png`;
+    link.href = canvas.toDataURL('image/png');
+    setTimeout(() => link.click(), idx * 100);
+  });
+  state.currentFrameIdx = savedIdx;
+  renderAll();
+  showInfo(`已导出 ${state.tactic.frames.length} 帧 PNG`);
+  closeExportMenu();
+}
+
+const GIF_WORKER_SRC = 'https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.worker.js';
+let gifWorkerUrl = null;
+
+// A cross-origin workerScript is rejected when the page is opened straight from
+// the filesystem, and gif.js swallows the failure, leaving render() hanging.
+// Reloading the script through a same-origin blob URL avoids that.
+async function getGifWorkerUrl() {
+  if (gifWorkerUrl) return gifWorkerUrl;
+  try {
+    const res = await fetch(GIF_WORKER_SRC);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const text = await res.text();
+    gifWorkerUrl = URL.createObjectURL(new Blob([text], { type: 'application/javascript' }));
+  } catch (e) {
+    console.warn('gif worker fetch failed, using CDN url', e);
+    gifWorkerUrl = GIF_WORKER_SRC;
+  }
+  return gifWorkerUrl;
+}
+
+async function exportGIF() {
+  closeExportMenu();
+  if (typeof GIF === 'undefined') { showInfo('GIF.js 库未加载，请检查网络'); return; }
+  if (state.tactic.frames.length < 2) { showInfo('至少需要2帧'); return; }
+
+  showInfo('正在准备 GIF 编码器…');
+  const workerScript = await getGifWorkerUrl();
+
+  // gif.js reads frame pixels with getImageData(0, 0, <declared w>, <declared h>),
+  // which ignores the 2D transform, so a dpr-scaled canvas would be cropped.
+  // Frames are blitted into this 1:1 buffer instead, keeping the GIF size equal
+  // to the logical drawing size.
+  const isFull = state.tactic.courtType === 'full';
+  const expW = isFull ? CFG.court.fullCourtCanvasH : CFG.court.canvasW;
+  const expH = isFull ? CFG.court.canvasW : CFG.court.canvasH;
+
+  const buffer = document.createElement('canvas');
+  buffer.width = expW;
+  buffer.height = expH;
+  const bufCtx = buffer.getContext('2d', { willReadFrequently: true });
+
+  const gif = new GIF({
+    // Encoding is frame-parallel, so use the available cores rather than 2.
+    workers: Math.max(2, Math.min(8, navigator.hardwareConcurrency || 2)),
+    quality: 10,
+    width: expW,
+    height: expH,
+    workerScript,
+  });
+
+  const savedIdx = state.currentFrameIdx;
+  const savedPlaying = state.playback.playing;
+  const savedProgress = state.playback.progress;
+  const savedPlayerSel = state.selectedPlayerId;
+  const savedArrowSel = state.selectedArrowId;
+  const savedInteraction = state.interaction;
+  const fps = 15;
+  // GIF delays live on a 10 ms grid, so snap the tick before counting samples.
+  const baseDelay = Math.round(1000 / fps / 10) * 10;
+  const counts = state.tactic.frames.map(f => Math.max(2, Math.round((f.duration || 1500) / baseDelay)));
+  // gif.js holds every frame as raw RGBA (~2 MB each here), so a long tactic
+  // trades smoothness for a bounded footprint: fewer samples, longer delays,
+  // same total duration.
+  const maxFrames = 150;
+  const wanted = counts.reduce((a, b) => a + b, 0);
+  const scale = wanted > maxFrames ? maxFrames / wanted : 1;
+  const frameDelay = Math.round(baseDelay / scale / 10) * 10;
+  const sampleCounts = counts.map(n => Math.max(2, Math.round(n * scale)));
+
+  const addCurrentFrame = () => {
+    bufCtx.setTransform(1, 0, 0, 1, 0, 0);
+    bufCtx.clearRect(0, 0, expW, expH);
+    bufCtx.drawImage(canvas, 0, 0, expW, expH);
+    gif.addFrame(bufCtx.getImageData(0, 0, expW, expH), { delay: frameDelay });
+  };
+
+  // Sample through the playback renderer so the GIF keeps the action paths on
+  // screen and moves players along their curves, exactly like the board plays.
+  // Selection handles and any half-drawn preview must not leak into the export.
+  state.selectedPlayerId = null;
+  state.selectedArrowId = null;
+  state.interaction = { type: 'idle', data: {} };
+  state.playback.playing = true;
+
+  sampleCounts.forEach((steps, idx) => {
+    state.currentFrameIdx = idx;
+    for (let s = 0; s < steps; s++) {
+      state.playback.progress = s / (steps - 1);
+      renderAll();
+      addCurrentFrame();
+    }
+  });
+
+  state.playback.playing = savedPlaying;
+  state.playback.progress = savedProgress;
+  state.selectedPlayerId = savedPlayerSel;
+  state.selectedArrowId = savedArrowSel;
+  state.interaction = savedInteraction;
+  state.currentFrameIdx = savedIdx;
+  renderAll();
+
+  const totalFrames = gif.frames.length;
+  const startedAt = performance.now();
+  let done = false;
+  showInfo(`正在编码 GIF：0/${totalFrames} 帧`, 30000);
+
+  const watchdog = setTimeout(() => {
+    if (done) return;
+    showInfo('GIF 编码没有响应：浏览器可能阻止了后台编码线程。请用本地服务器打开本页，或改用「导出 PNG 序列」。', 15000);
+  }, 20000);
+
+  gif.on('progress', ratio => {
+    const finished = Math.round(ratio * totalFrames);
+    const secs = Math.round((performance.now() - startedAt) / 1000);
+    showInfo(`正在编码 GIF：${finished}/${totalFrames} 帧 · ${secs}s`, 30000);
+  });
+
+  gif.on('finished', blob => {
+    done = true;
+    clearTimeout(watchdog);
+    const secs = ((performance.now() - startedAt) / 1000).toFixed(1);
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.download = `${fileNameBase()}.gif`;
+    link.href = url;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    // Revoking synchronously can abort the download before the browser starts it.
+    setTimeout(() => URL.revokeObjectURL(url), 30000);
+    state.currentFrameIdx = savedIdx;
+    renderAll();
+    showInfo(`GIF 导出完成！${totalFrames} 帧 · ${secs}s · ${(blob.size / 1048576).toFixed(1)} MB`);
+  });
+
+  gif.render();
+}
+
+// ============================================================
+// PHASE 4: SAVE / LOAD
+// ============================================================
+function fileNameBase() {
+  return (state.tactic.name || '').trim().replace(/[\\/:*?"<>|]/g, '_') || 'basketball_tactic';
+}
+
+function saveProject() {
+  const data = JSON.stringify(state.tactic, null, 2);
+  const blob = new Blob([data], { type: 'application/json' });
+  const link = document.createElement('a');
+  link.download = `${fileNameBase()}.json`;
+  const url = URL.createObjectURL(blob);
+  link.href = url;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 30000);
+  showInfo('项目已保存');
+
+  // Also save to localStorage
+  localStorage.setItem('basketball_tactic_' + (state.tactic.name || 'default'), data);
+}
+
+function loadProject(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const data = JSON.parse(e.target.result);
+      state.tactic = data;
+      state.currentFrameIdx = 0;
+      state.selectedArrowId = null;
+      state.selectedPlayerId = null;
+      state.interaction = { type: 'idle', data: {} };
+
+      // Update UI
+      syncNameUI();
+      document.getElementById('offense-count').value = data.frames[0]?.players.filter(p => p.team === 'offense').length || 5;
+      document.getElementById('defense-count').value = data.frames[0]?.players.filter(p => p.team === 'defense').length || 5;
+
+      if (data.courtType) setCourtType(data.courtType);
+
+      renderAll();
+      updateFrameList();
+      showInfo('项目已加载');
+    } catch (err) {
+      showInfo('加载失败：文件格式错误');
+      console.error(err);
+    }
+  };
+  reader.readAsText(file);
+  event.target.value = '';
+}
+
+// ============================================================
+// PHASE 5: INTERACTION HANDLERS
+// ============================================================
+function setTool(tool) {
+  state.tool = tool;
+  state.interaction = { type: 'idle', data: {} };
+  state.selectedArrowId = null;
+  document.querySelectorAll('.tool-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.tool === tool);
+  });
+
+  // Update cursor
+  if (tool === 'select') {
+    canvas.style.cursor = 'default';
+  } else {
+    canvas.style.cursor = 'crosshair';
+  }
+}
+
+// Player action panel functions
+function enterSelectMode() {
+  state.tool = 'select';
+  state.interaction = { type: 'idle', data: {} };
+  canvas.style.cursor = 'default';
+  updatePlayerActionPanel();
+  renderAll();
+}
+
+function updatePlayerActionPanel() {
+  const panel = document.getElementById('player-action-panel');
+  const frame = currentFrame();
+  const player = frame.players.find(p => p.id === state.selectedPlayerId);
+
+  if (!player) {
+    panel.style.display = 'none';
+    return;
+  }
+
+  panel.style.display = 'block';
+  const title = document.getElementById('player-action-title');
+  const teamLabel = player.team === 'offense' ? '进攻' : '防守';
+  title.textContent = `#${player.number} ${teamLabel}方`;
+
+  const hasBall = frame.ball.holderId === player.id;
+  const btnSelectMode = document.getElementById('btn-select-mode');
+  const btnSetBall = document.getElementById('btn-set-ball');
+  const btnClearBall = document.getElementById('btn-clear-ball');
+  const btnMove = document.getElementById('btn-action-move');
+  const btnPass = document.getElementById('btn-action-pass');
+  const btnDribble = document.getElementById('btn-action-dribble');
+  const btnScreen = document.getElementById('btn-action-screen');
+  const hint = document.getElementById('player-action-hint');
+
+  // Update select mode button state
+  if (state.tool === 'select') {
+    btnSelectMode.style.background = '#0f3460';
+    btnSelectMode.style.color = '#fff';
+  } else {
+    btnSelectMode.style.background = 'transparent';
+    btnSelectMode.style.color = '#a0b4d0';
+  }
+
+  // Only offense players can have the ball
+  if (player.team === 'offense') {
+    btnSetBall.style.display = hasBall ? 'none' : 'block';
+    btnClearBall.style.display = hasBall ? 'block' : 'none';
+  } else {
+    btnSetBall.style.display = 'none';
+    btnClearBall.style.display = 'none';
+  }
+
+  // Action availability based on ball possession and current mode
+  const isInDrawingMode = state.tool !== 'select';
+  
+  if (isInDrawingMode) {
+    // In drawing mode, disable all action buttons
+    btnMove.disabled = true;
+    btnPass.disabled = true;
+    btnDribble.disabled = true;
+    btnScreen.disabled = true;
+    
+    if (state.tool === 'pass') {
+      hint.textContent = '传球模式：点击队友或篮筐完成传球';
+    } else if (state.tool === 'move') {
+      hint.textContent = '跑位模式：左键添加转向点，右键设置终点';
+    } else if (state.tool === 'dribble') {
+      hint.textContent = '运球模式：左键添加转向点，右键设置终点';
+    } else if (state.tool === 'screen') {
+      hint.textContent = '挡拆模式：左键添加转向点，右键设置终点';
+    }
+  } else {
+    // In select mode, enable/disable based on ball possession
+    if (hasBall) {
+      // Has ball: can pass/shot or dribble
+      btnMove.disabled = true;
+      btnPass.disabled = false;
+      btnDribble.disabled = false;
+      btnScreen.disabled = true;
+      hint.textContent = '持球状态：可传球/投篮或运球';
+    } else {
+      // No ball: can move or screen
+      btnMove.disabled = false;
+      btnPass.disabled = true;
+      btnDribble.disabled = true;
+      btnScreen.disabled = false;
+      hint.textContent = '无球状态：可跑位或挡拆';
+    }
+
+    // Defense players can only move or screen (never have ball in our simplified model)
+    if (player.team === 'defense') {
+      btnMove.disabled = false;
+      btnPass.disabled = true;
+      btnDribble.disabled = true;
+      btnScreen.disabled = false;
+      hint.textContent = '防守球员：可跑位或挡拆';
+    }
+  }
+}
+
+function setPlayerHasBall() {
+  const frame = currentFrame();
+  const player = frame.players.find(p => p.id === state.selectedPlayerId);
+  if (!player || player.team !== 'offense') return;
+
+  // Check if any OTHER player has a dribble or pass action
+  const hasBallAction = frame.actions.find(a =>
+    (a.type === 'dribble' || a.type === 'pass') &&
+    a.playerId && a.playerId !== player.id
+  );
+  if (hasBallAction) {
+    const actor = frame.players.find(p => p.id === hasBallAction.playerId);
+    showInfo(`#${actor?.number || '?'} 已有${hasBallAction.type === 'dribble' ? '运球' : '传球'}动作，本帧其他球员不能持球`);
+    return;
+  }
+
+  saveUndo();
+  // Clear any previous holder
+  if (frame.ball.holderId) {
+    const prevHolder = frame.players.find(p => p.id === frame.ball.holderId);
+    if (prevHolder) prevHolder.hasBall = false;
+  }
+  frame.ball.holderId = player.id;
+  player.hasBall = true;
+  frame.ball.x = player.x;
+  frame.ball.y = player.y;
+  updatePlayerActionPanel();
+  renderAll();
+}
+
+function clearPlayerHasBall() {
+  const frame = currentFrame();
+  const player = frame.players.find(p => p.id === state.selectedPlayerId);
+  if (!player || frame.ball.holderId !== player.id) return;
+
+  saveUndo();
+  player.hasBall = false;
+  frame.ball.holderId = null;
+  // Place ball near the player
+  frame.ball.x = player.x + 30;
+  frame.ball.y = player.y;
+  updatePlayerActionPanel();
+  renderAll();
+}
+
+function startActionFromPlayer(type) {
+  const frame = currentFrame();
+  const player = frame.players.find(p => p.id === state.selectedPlayerId);
+  if (!player) return;
+
+  // Check if action is valid
+  const hasBall = frame.ball.holderId === player.id;
+  if (type === 'pass' && !hasBall) return;
+  if (type === 'dribble' && !hasBall) return;
+  if (type === 'move' && hasBall) return;
+  if (type === 'screen' && hasBall) return;
+
+  // Set tool to exit select mode and enter drawing mode
+  setTool(type);
+  const startPt = { x: player.x, y: player.y };
+  
+  // For pass, we need to wait for target click
+  if (type === 'pass') {
+    state.interaction = {
+      type: 'pass_targeting',
+      data: {
+        startPt: startPt,
+        playerId: player.id,
+        color: state.currentArrowColor,
+      }
+    };
+    showInfo('传球模式：请点击队友或篮筐作为目标');
+    canvas.style.cursor = 'crosshair';
+  } else {
+    state.interaction = {
+      type: 'drawing',
+      data: {
+        startPt: startPt,
+        currentPt: startPt,
+        controlPoints: [],
+        playerId: player.id,
+        color: state.currentArrowColor,
+      }
+    };
+    canvas.style.cursor = 'crosshair';
+  }
+  updatePlayerActionPanel();
+  renderAll();
+}
+
+function setArrowColor(color) {
+  state.currentArrowColor = color;
+  document.getElementById('arrow-color').value = color;
+
+  // Update selected arrow color
+  if (state.selectedArrowId) {
+    saveUndo();
+    const frame = currentFrame();
+    const action = frame.actions.find(a => a.id === state.selectedArrowId);
+    if (action) {
+      action.color = color;
+      renderAll();
+    }
+  }
+}
+
+function setCourtType(type) {
+  if (type === state.tactic.courtType) return;
+  const oldType = state.tactic.courtType;
+  // Save current state under the old court type
+  state.courtStates[oldType] = JSON.parse(JSON.stringify({
+    tactic: state.tactic,
+    currentFrameIdx: state.currentFrameIdx,
+  }));
+  // Switch and restore/load
+  if (state.courtStates[type]) {
+    const saved = state.courtStates[type];
+    state.tactic = saved.tactic;
+    state.currentFrameIdx = saved.currentFrameIdx;
+  } else {
+    // First time visiting this court type - fresh state
+    const name = state.tactic.name;
+    state.tactic = { name, courtType: type, frames: [defaultFrame()] };
+    state.currentFrameIdx = 0;
+    initPlayers();
+  }
+  state.tactic.courtType = type;
+  state.selectedArrowId = null;
+  state.selectedPlayerId = null;
+  state.interaction = { type: 'idle', data: {} };
+  document.getElementById('btn-half').classList.toggle('active', type === 'half');
+  document.getElementById('btn-full').classList.toggle('active', type === 'full');
+  resizeCanvas();
+  renderAll();
+  updateFrameList();
+}
+
+function setPlayerCount(team, count) {
+  saveUndo();
+  const frame = currentFrame();
+  const current = frame.players.filter(p => p.team === team);
+  count = parseInt(count);
+
+  if (count > current.length) {
+    // Add players
+    const area = courtArea();
+    for (let i = current.length; i < count; i++) {
+      frame.players.push({
+        id: uid(), team,
+        number: state.playerNames[team][i] || (i+1).toString(),
+        x: area.x + area.w / 2 + (i - 2) * 60,
+        y: area.y + area.h / 2,
+        hasBall: false,
+      });
+    }
+  } else if (count < current.length) {
+    // Remove excess players
+    const toRemove = current.slice(count);
+    toRemove.forEach(p => {
+      const idx = frame.players.indexOf(p);
+      if (idx >= 0) frame.players.splice(idx, 1);
+      // Remove associated actions
+      frame.actions = frame.actions.filter(a => a.playerId !== p.id);
+    });
+  }
+
+  renderAll();
+  updateFrameList();
+}
+
+function setFrameDuration(val) {
+  const frame = currentFrame();
+  frame.duration = Math.max(300, Math.min(5000, parseFloat(val) * 1000));
+}
+
+// ── Mouse handlers ──
+canvas.addEventListener('mousedown', onMouseDown);
+canvas.addEventListener('mousemove', onMouseMove);
+canvas.addEventListener('mouseup', onMouseUp);
+canvas.addEventListener('dblclick', onDoubleClick);
+canvas.addEventListener('contextmenu', onContextMenu);
+
+// Touch support
+canvas.addEventListener('touchstart', onTouchStart, { passive: false });
+canvas.addEventListener('touchmove', onTouchMove, { passive: false });
+canvas.addEventListener('touchend', onTouchEnd);
+
+function onTouchStart(e) {
+  e.preventDefault();
+  const touch = e.touches[0];
+  onMouseDown({ clientX: touch.clientX, clientY: touch.clientY, button: 0 });
+}
+
+function onTouchMove(e) {
+  e.preventDefault();
+  const touch = e.touches[0];
+  onMouseMove({ clientX: touch.clientX, clientY: touch.clientY });
+}
+
+function onTouchEnd(e) {
+  const touch = e.changedTouches[0];
+  onMouseUp({ clientX: touch.clientX, clientY: touch.clientY });
+}
+
+function onMouseDown(e) {
+  if (e.button === 2) return; // right click handled by contextmenu
+  const pt = canvasCoords(e);
+  const frame = currentFrame();
+
+  // Pass targeting mode: check for target player, basket, or action endpoint FIRST
+  if (state.interaction.type === 'pass_targeting') {
+    const passerId = state.interaction.data.playerId;
+    const targetPlayer = hitTestPlayer(pt.x, pt.y, frame.players);
+    const basket = getBasketPosition();
+    const isBasket = dist(pt.x, pt.y, basket.x, basket.y) < 20;
+
+    // Check if click is near any other player's action endpoint
+    let targetEndpoint = null;
+    for (const act of frame.actions) {
+      if (act.playerId !== passerId && act.type !== 'pass') {
+        if (dist(pt.x, pt.y, act.endX, act.endY) < CFG.hitRadius) {
+          targetEndpoint = act;
+          break;
+        }
+      }
+    }
+
+    if (targetPlayer && targetPlayer.id === passerId) {
+      showInfo('不能传给自己');
+    } else if (targetEndpoint) {
+      // Pass to a player's action endpoint (the ball goes to where they will be)
+      state.interaction = {
+        type: 'drawing',
+        data: {
+          startPt: state.interaction.data.startPt,
+          currentPt: { x: targetEndpoint.endX, y: targetEndpoint.endY },
+          controlPoints: [],
+          targetPlayerId: targetEndpoint.playerId,
+          playerId: passerId,
+          color: state.interaction.data.color,
+          passToEndpoint: true,
+        }
+      };
+      finishArrow();
+    } else if (targetPlayer) {
+      // Check if target player already has their own action
+      const targetHasAction = frame.actions.some(a => a.playerId === targetPlayer.id && a.type !== 'pass');
+      if (targetHasAction) {
+        showInfo('该球员已有行动，不能同时接球');
+        return;
+      }
+      // Pass to another player
+      state.interaction = {
+        type: 'drawing',
+        data: {
+          startPt: state.interaction.data.startPt,
+          currentPt: { x: targetPlayer.x, y: targetPlayer.y },
+          controlPoints: [],
+          targetPlayerId: targetPlayer.id,
+          playerId: passerId,
+          color: state.interaction.data.color,
+        }
+      };
+      finishArrow();
+    } else if (isBasket) {
+      // Pass to basket (shot)
+      state.interaction = {
+        type: 'drawing',
+        data: {
+          startPt: state.interaction.data.startPt,
+          currentPt: basket,
+          controlPoints: [],
+          isShot: true,
+          playerId: passerId,
+          color: state.interaction.data.color,
+        }
+      };
+      finishArrow();
+    } else {
+      showInfo('传球目标无效：请点击队友、篮筐或队友行动终点');
+    }
+    return;
+  }
+
+  // Always check for existing elements first (regardless of tool)
+  const player = hitTestPlayer(pt.x, pt.y, frame.players);
+  if (player) {
+    // In select mode, allow selection and dragging
+    if (state.tool === 'select') {
+      saveUndo();
+      state.interaction = { type: 'dragging_player', data: { player, offsetX: pt.x - player.x, offsetY: pt.y - player.y } };
+      state.selectedPlayerId = player.id;
+      state.selectedArrowId = null;
+      canvas.style.cursor = 'grabbing';
+      updatePlayerActionPanel();
+      return;
+    }
+    // In drawing mode, allow dragging but don't select
+    else {
+      saveUndo();
+      state.interaction = { type: 'dragging_player', data: { player, offsetX: pt.x - player.x, offsetY: pt.y - player.y } };
+      canvas.style.cursor = 'grabbing';
+      return;
+    }
+  }
+
+  // Ball hit test - use rendered position (near holder if held)
+  let ballRenderX = frame.ball.x, ballRenderY = frame.ball.y;
+  if (frame.ball.holderId) {
+    const holder = frame.players.find(p => p.id === frame.ball.holderId);
+    if (holder) {
+      ballRenderX = holder.x + CFG.player.radius + CFG.ball.radius + 2;
+      ballRenderY = holder.y - CFG.player.radius / 2;
+    }
+  }
+  if (dist(pt.x, pt.y, ballRenderX, ballRenderY) < CFG.ball.radius + 8) {
+    saveUndo();
+    // Detach ball from holder if atached
+    if (frame.ball.holderId) {
+      const holder = frame.players.find(p => p.id === frame.ball.holderId);
+      if (holder) holder.hasBall = false;
+      frame.ball.holderId = null;
+    }
+    state.interaction = { type: 'dragging_ball', data: { offsetX: pt.x - ballRenderX, offsetY: pt.y - ballRenderY } };
+    return;
+  }
+
+  // Keypoints are grabbed directly: a bezier control point lies off the curve,
+  // so routing this through hitTestArrow's distance-to-path check would make
+  // control points ungrabbable on strongly curved paths.
+  if (state.tool === 'select') {
+    const handle = hitTestKeypoint(pt.x, pt.y, frame.actions);
+    if (handle) {
+      state.selectedArrowId = handle.action.id;
+      state.selectedPlayerId = null;
+      updatePlayerActionPanel();
+      saveUndo();
+      state.interaction = {
+        type: 'dragging_arrow',
+        data: { arrow: handle.action, dragPart: handle.part, lastX: pt.x, lastY: pt.y, cpIndex: handle.index }
+      };
+      canvas.style.cursor = 'grabbing';
+      renderAll();
+      return;
+    }
+  }
+
+  const arrow = hitTestArrow(pt.x, pt.y, frame.actions);
+  if (arrow && state.tool === 'select') {
+    state.selectedArrowId = arrow.id;
+    state.selectedPlayerId = null;
+    updatePlayerActionPanel();
+    renderAll();
+    if (dist(pt.x, pt.y, arrow.startX, arrow.startY) < 14) {
+      showInfo('起始点与球员绑定，不能拖动。可拖动终点或控制点。');
+    } else {
+      showInfo('已选中路径：拖动实心终点改长短，拖动空心控制点改形状，双击路径可添加控制点');
+    }
+    return;
+  }
+
+  // Select tool: click on empty space deselects
+  if (state.tool === 'select') {
+    state.selectedArrowId = null;
+    state.selectedPlayerId = null;
+    updatePlayerActionPanel();
+    renderAll();
+    return;
+  }
+
+  // Arrow drawing tools
+  if (['move', 'pass', 'dribble', 'screen'].includes(state.tool)) {
+    if (state.interaction.type === 'idle') {
+      state.interaction = {
+        type: 'drawing',
+        data: { startPt: pt, currentPt: pt, controlPoints: [] }
+      };
+    } else if (state.interaction.type === 'drawing') {
+      const preset = ARROW_PRESETS[state.tool];
+      if (preset.canCurve) {
+        state.interaction.data.controlPoints.push(pt);
+      }
+    }
+  }
+}
+
+function onMouseMove(e) {
+  const pt = canvasCoords(e);
+  const { type, data } = state.interaction;
+
+  if (type === 'dragging_player') {
+    const player = data.player;
+    player.x = pt.x - data.offsetX;
+    player.y = pt.y - data.offsetY;
+
+    const frame = currentFrame();
+    // Update ball if this player has it
+    if (player.hasBall) {
+      frame.ball.holderId = player.id;
+    }
+    // Update all action start points tied to this player
+    frame.actions.forEach(a => {
+      if (a.playerId === player.id) {
+        a.startX = player.x;
+        a.startY = player.y;
+      }
+    });
+    // Update direct pass endpoints targeting this player
+    frame.actions.forEach(a => {
+      if (a.type === 'pass' && a.targetPlayerId === player.id && !a.passToEndpoint) {
+        a.endX = player.x;
+        a.endY = player.y;
+      }
+    });
+    renderAll();
+    return;
+  }
+
+  if (type === 'dragging_ball') {
+    const frame = currentFrame();
+    frame.ball.x = pt.x - data.offsetX;
+    frame.ball.y = pt.y - data.offsetY;
+    frame.ball.holderId = null;
+    renderAll();
+    return;
+  }
+
+  if (type === 'dragging_arrow') {
+    const arrow = data.arrow;
+    if (data.dragPart === 'end') {
+      arrow.endX = pt.x;
+      arrow.endY = pt.y;
+      // Update pass-to-endpoint actions targeting this action's endpoint
+      const frame = currentFrame();
+      frame.actions.forEach(a => {
+        if (a.type === 'pass' && a.passToEndpoint && a.targetPlayerId === arrow.playerId) {
+          a.endX = arrow.endX;
+          a.endY = arrow.endY;
+        }
+      });
+    } else if (data.dragPart === 'cp' && arrow.controlPoints) {
+      arrow.controlPoints[data.cpIndex].x = pt.x;
+      arrow.controlPoints[data.cpIndex].y = pt.y;
+    }
+    renderAll();
+    return;
+  }
+
+  if (type === 'drawing') {
+    data.currentPt = pt;
+    renderAll();
+    return;
+  }
+
+  // Hover cursor - show grab/pointer when over interactive elements (any tool)
+  const frame = currentFrame();
+  const player = hitTestPlayer(pt.x, pt.y, frame.players);
+  if (player) {
+    canvas.style.cursor = 'grab';
+  } else {
+    const arrow = hitTestArrow(pt.x, pt.y, frame.actions);
+    canvas.style.cursor = arrow ? 'pointer' : (state.tool === 'select' ? 'default' : 'crosshair');
+  }
+}
+
+function onMouseUp(e) {
+  const { type, data } = state.interaction;
+
+  if (type === 'dragging_player' || type === 'dragging_ball' || type === 'dragging_arrow') {
+    state.interaction = { type: 'idle', data: {} };
+    canvas.style.cursor = state.tool === 'select' ? 'default' : 'crosshair';
+    updateFrameList();
+    renderAll();
+    return;
+  }
+
+  // For non-curve arrows (pass), finish on mouseup
+  // Pass no longer finishes on mouseup; it finishes when target is clicked in pass_targeting mode
+}
+
+function onDoubleClick(e) {
+  const pt = canvasCoords(e);
+
+  // Double-click on player to toggle ball possession
+  if (state.tool === 'select') {
+    const frame = currentFrame();
+    const player = hitTestPlayer(pt.x, pt.y, frame.players);
+    if (player) {
+      saveUndo();
+      // Toggle ball
+      frame.players.forEach(p => p.hasBall = false);
+      if (frame.ball.holderId === player.id) {
+        frame.ball.holderId = null;
+        frame.ball.x = player.x;
+        frame.ball.y = player.y;
+      } else {
+        player.hasBall = true;
+        frame.ball.holderId = player.id;
+        frame.ball.x = player.x;
+        frame.ball.y = player.y;
+      }
+      renderAll();
+      updateFrameList();
+      return;
+    }
+
+    // Empty of players: insert a turning point where the path was clicked
+    const arrow = hitTestArrow(pt.x, pt.y, frame.actions);
+    if (arrow && arrow.type !== 'pass') {
+      saveUndo();
+      insertControlPoint(arrow, pt);
+      state.selectedArrowId = arrow.id;
+      renderAll();
+      showInfo('已添加控制点，拖动它即可改变路径形状');
+    }
+  }
+}
+
+// Insert a control point on the straight polyline segment nearest to pt.
+// Keypoint order must match getActionPath's [start, ...cps, end] chain.
+function insertControlPoint(arrow, pt) {
+  const pts = [
+    { x: arrow.startX, y: arrow.startY },
+    ...(arrow.controlPoints || []),
+    { x: arrow.endX, y: arrow.endY },
+  ];
+
+  let bestSeg = 1;
+  let bestD = Infinity;
+  for (let i = 1; i < pts.length; i++) {
+    const d = distToSegment(pt.x, pt.y, pts[i - 1].x, pts[i - 1].y, pts[i].x, pts[i].y);
+    if (d < bestD) { bestD = d; bestSeg = i; }
+  }
+
+  if (!arrow.controlPoints) arrow.controlPoints = [];
+  arrow.controlPoints.splice(bestSeg - 1, 0, { x: pt.x, y: pt.y });
+}
+
+function onContextMenu(e) {
+  e.preventDefault();
+  const pt = canvasCoords(e);
+  const frame = currentFrame();
+
+  // If currently drawing an arrow, right-click sets endpoint and finishes
+  if (state.interaction.type === 'drawing') {
+    state.interaction.data.currentPt = pt;
+    finishArrow();
+    return;
+  }
+
+  // If in pass targeting mode, right-click cancels
+  if (state.interaction.type === 'pass_targeting') {
+    state.interaction = { type: 'idle', data: {} };
+    setTool('select');
+    updatePlayerActionPanel();
+    renderAll();
+    showInfo('传球已取消');
+    return;
+  }
+
+  // Right-click on arrow to delete (only in select mode)
+  if (state.tool === 'select') {
+    const arrow = hitTestArrow(pt.x, pt.y, frame.actions);
+    if (arrow) {
+      saveUndo();
+      frame.actions = frame.actions.filter(a => a.id !== arrow.id);
+      state.selectedArrowId = null;
+      renderAll();
+      updateFrameList();
+      showInfo('已删除箭头');
+      return;
+    }
+  }
+
+  // Right-click on player to delete
+  const player = hitTestPlayer(pt.x, pt.y, frame.players);
+  if (player) {
+    saveUndo();
+    frame.players = frame.players.filter(p => p.id !== player.id);
+    frame.actions = frame.actions.filter(a => a.playerId !== player.id);
+    if (frame.ball.holderId === player.id) {
+      frame.ball.holderId = null;
+    }
+    // Update count inputs
+    const offCount = frame.players.filter(p => p.team === 'offense').length;
+    const defCount = frame.players.filter(p => p.team === 'defense').length;
+    document.getElementById('offense-count').value = offCount;
+    document.getElementById('defense-count').value = defCount;
+    renderAll();
+    updateFrameList();
+    showInfo('已删除球员');
+  }
+}
+
+function finishArrow() {
+  const { data } = state.interaction;
+  if (!data.startPt || !data.currentPt) return;
+
+  const startPt = data.startPt;
+  const endPt = data.currentPt;
+
+  // Minimum length check
+  if (dist(startPt.x, startPt.y, endPt.x, endPt.y) < 10 && data.controlPoints.length === 0) {
+    state.interaction = { type: 'idle', data: {} };
+    renderAll();
+    return;
+  }
+
+  saveUndo();
+
+  // Check if start point is on a player
+  const frame = currentFrame();
+  const startPlayer = hitTestPlayer(startPt.x, startPt.y, frame.players);
+
+  // Check if end point is on a player (for pass)
+  const endPlayer = hitTestPlayer(endPt.x, endPt.y, frame.players);
+
+  const action = {
+    id: uid(),
+    type: state.tool,
+    startX: startPlayer ? startPlayer.x : startPt.x,
+    startY: startPlayer ? startPlayer.y : startPt.y,
+    endX: endPt.x,
+    endY: endPt.y,
+    controlPoints: data.controlPoints.length > 0 ? [...data.controlPoints] : undefined,
+    playerId: data.playerId || (startPlayer ? startPlayer.id : undefined),
+    color: data.color || state.currentArrowColor,
+  };
+
+  // For pass type, use target player from data or snap to end player
+  if (state.tool === 'pass') {
+    if (data.targetPlayerId) {
+      // Pass to specific target player (from pass_targeting mode)
+      action.targetPlayerId = data.targetPlayerId;
+      if (data.passToEndpoint) {
+        // Pass to endpoint of target's action - keep endpoint position, allow target to have action
+        action.passToEndpoint = true;
+      } else {
+        // Direct pass to stationary target
+        const targetPlayer = frame.players.find(p => p.id === data.targetPlayerId);
+        if (targetPlayer) {
+          action.endX = targetPlayer.x;
+          action.endY = targetPlayer.y;
+        }
+      }
+    } else if (endPlayer) {
+      // Pass to end player (from normal drawing mode)
+      action.endX = endPlayer.x;
+      action.endY = endPlayer.y;
+      action.targetPlayerId = endPlayer.id;
+    }
+    
+    // Mark as shot if targeting basket
+    if (data.isShot) {
+      action.isShot = true;
+    }
+  }
+
+  // Check if this player is a target of a DIRECT pass (not endpoint pass)
+  if (action.playerId) {
+    const isDirectPassTarget = frame.actions.some(a => a.type === 'pass' && a.targetPlayerId === action.playerId && !a.passToEndpoint);
+    if (isDirectPassTarget) {
+      showInfo('该球员正在接球，本帧不能行动');
+      state.interaction = { type: 'idle', data: {} };
+      enterSelectMode();
+      return;
+    }
+  }
+
+  // Remove existing action for this player (one action per player per frame)
+  if (action.playerId) {
+    frame.actions = frame.actions.filter(a => a.playerId !== action.playerId);
+  }
+
+  frame.actions.push(action);
+
+  // For pass actions, update ball possession for the next frame
+  if (state.tool === 'pass' && action.targetPlayerId) {
+    action.transferBall = true;
+  }
+
+  state.interaction = { type: 'idle', data: {} };
+  const actionType = state.tool;
+  // Auto-switch back to select mode to allow selecting the next player
+  enterSelectMode();
+  updatePlayerActionPanel();
+  renderAll();
+  updateFrameList();
+  showInfo(actionType === 'pass' ? '传球箭头已创建' : '箭头已创建');
+}
+
+// ── Hit testing ──
+function hitTestPlayer(x, y, players) {
+  for (const p of players) {
+    if (dist(x, y, p.x, p.y) < CFG.hitRadius) return p;
+  }
+  return null;
+}
+
+function hitTestArrow(x, y, actions) {
+  for (const action of actions) {
+    const path = getActionPath(action, 30);
+    for (let i = 0; i < path.length - 1; i++) {
+      const d = distToSegment(x, y, path[i].x, path[i].y, path[i+1].x, path[i+1].y);
+      if (d < 10) return action;
+    }
+  }
+  return null;
+}
+
+// Nearest draggable keypoint (endpoint or turning point) across all actions.
+// The start point is excluded because it is bound to its player.
+function hitTestKeypoint(x, y, actions, radius = 14) {
+  let best = null;
+  let bestD = radius;
+
+  for (const action of actions) {
+    (action.controlPoints || []).forEach((cp, i) => {
+      const d = dist(x, y, cp.x, cp.y);
+      if (d < bestD) { bestD = d; best = { action, part: 'cp', index: i }; }
+    });
+    const dEnd = dist(x, y, action.endX, action.endY);
+    if (dEnd < bestD) { bestD = dEnd; best = { action, part: 'end', index: 0 }; }
+  }
+
+  return best;
+}
+
+function distToSegment(px, py, x1, y1, x2, y2) {
+  const dx = x2 - x1, dy = y2 - y1;
+  const lenSq = dx * dx + dy * dy;
+  if (lenSq === 0) return dist(px, py, x1, y1);
+  let t = ((px - x1) * dx + (py - y1) * dy) / lenSq;
+  t = clamp(t, 0, 1);
+  return dist(px, py, x1 + t * dx, y1 + t * dy);
+}
+
+// ============================================================
+// KEYBOARD SHORTCUTS
+// ============================================================
+document.addEventListener('keydown', (e) => {
+  // Don't trigger shortcuts when typing in inputs
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+  if (e.code === 'Space') {
+    e.preventDefault();
+    togglePlay();
+  }
+  if (e.code === 'ArrowLeft') {
+    e.preventDefault();
+    prevFrame();
+  }
+  if (e.code === 'ArrowRight') {
+    e.preventDefault();
+    nextFrame();
+  }
+  if (e.code === 'Delete' || e.code === 'Backspace') {
+    e.preventDefault();
+    deleteSelected();
+  }
+  if (e.code === 'Escape') {
+    state.interaction = { type: 'idle', data: {} };
+    state.selectedArrowId = null;
+    state.selectedPlayerId = null;
+    renderAll();
+  }
+  if (e.ctrlKey && e.code === 'KeyZ') {
+    e.preventDefault();
+    undo();
+  }
+  if (e.ctrlKey && e.code === 'KeyY') {
+    e.preventDefault();
+    redo();
+  }
+  if (e.ctrlKey && e.code === 'KeyS') {
+    e.preventDefault();
+    saveProject();
+  }
+  // Tool shortcuts
+  if (e.code === 'Digit1') setTool('select');
+  if (e.code === 'Digit2') setTool('move');
+  if (e.code === 'Digit3') setTool('pass');
+  if (e.code === 'Digit4') setTool('dribble');
+  if (e.code === 'Digit5') setTool('screen');
+});
+
+function deleteSelected() {
+  const frame = currentFrame();
+  if (state.selectedArrowId) {
+    saveUndo();
+    frame.actions = frame.actions.filter(a => a.id !== state.selectedArrowId);
+    state.selectedArrowId = null;
+    renderAll();
+    updateFrameList();
+    showInfo('已删除箭头');
+  } else if (state.selectedPlayerId) {
+    saveUndo();
+    frame.players = frame.players.filter(p => p.id !== state.selectedPlayerId);
+    frame.actions = frame.actions.filter(a => a.playerId !== state.selectedPlayerId);
+    if (frame.ball.holderId === state.selectedPlayerId) frame.ball.holderId = null;
+    state.selectedPlayerId = null;
+    const offCount = frame.players.filter(p => p.team === 'offense').length;
+    const defCount = frame.players.filter(p => p.team === 'defense').length;
+    document.getElementById('offense-count').value = offCount;
+    document.getElementById('defense-count').value = defCount;
+    renderAll();
+    updateFrameList();
+    showInfo('已删除球员');
+  }
+}
+
+// ============================================================
+// UI HELPERS
+// ============================================================
+function toggleExportMenu() {
+  document.getElementById('export-menu').classList.toggle('show');
+}
+
+function closeExportMenu() {
+  document.getElementById('export-menu').classList.remove('show');
+}
+
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('.dropdown')) closeExportMenu();
+});
+
+function toggleSettings() {
+  document.getElementById('settings-modal').classList.toggle('show');
+}
+
+function applySettings() {
+  const offNames = document.getElementById('offense-names').value.split(',').map(s => s.trim()).filter(Boolean);
+  const defNames = document.getElementById('defense-names').value.split(',').map(s => s.trim()).filter(Boolean);
+  state.playerNames.offense = offNames;
+  state.playerNames.defense = defNames;
+
+  // Update player numbers
+  const frame = currentFrame();
+  frame.players.forEach(p => {
+    const names = state.playerNames[p.team];
+    const idx = frame.players.filter(pp => pp.team === p.team).indexOf(p);
+    if (names[idx]) p.number = names[idx];
+  });
+
+  toggleSettings();
+  renderAll();
+  updateFrameList();
+  showInfo('设置已应用');
+}
+
+// ============================================================
+// TACTIC TITLE & FRAME CAPTION (burned into the board and every export)
+// ============================================================
+function drawTitle() {
+  const name = (state.tactic.name || '').trim();
+  if (!name) return;
+  const isFull = state.tactic.courtType === 'full';
+  const physW = isFull ? CFG.court.fullCourtCanvasH : CFG.court.canvasW;
+  const fs = isFull ? 15 : 13;
+  const barW = 3, gap = 9, padR = 12, padY = 6;
+  ctx.font = `700 ${fs}px -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif`;
+  const maxTextW = physW - 20 - barW - gap - padR;
+  let text = name;
+  while (text.length > 1 && ctx.measureText(text).width > maxTextW) text = text.slice(0, -1);
+  if (text !== name) text += '…';
+  const w = barW + gap + ctx.measureText(text).width + padR;
+  const h = fs + padY * 2;
+  const x = 10;
+  const y = ((isFull ? 50 : 30) - h) / 2;
+  const r = 7;
+
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+  ctx.shadowColor = 'rgba(0,0,0,.4)';
+  ctx.shadowBlur = 10;
+  ctx.shadowOffsetY = 3;
+  ctx.fillStyle = 'rgba(10,14,30,.86)';
+  ctx.fill();
+  ctx.shadowColor = 'transparent';
+  ctx.shadowBlur = 0;
+  ctx.shadowOffsetY = 0;
+  ctx.clip();
+  ctx.fillStyle = '#e94560';
+  ctx.fillRect(x, y, barW, h);
+  ctx.restore();
+
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+  ctx.strokeStyle = 'rgba(233,69,96,.5)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+  ctx.fillStyle = '#f4f7ff';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(text, x + barW + gap, y + h / 2 + 0.5);
+  ctx.restore();
+}
+
+function wrapCaption(text, maxW) {
+  const lines = [];
+  let line = '';
+  for (const ch of text) {
+    if (line && ctx.measureText(line + ch).width > maxW) {
+      const sp = line.lastIndexOf(' ');
+      if (sp > 0) { lines.push(line.slice(0, sp)); line = line.slice(sp + 1) + ch; }
+      else { lines.push(line); line = ch; }
+    } else {
+      line += ch;
+    }
+  }
+  if (line) lines.push(line);
+  return lines;
+}
+
+function drawCaption() {
+  const text = (currentFrame().caption || '').trim();
+  if (!text) return;
+  const isFull = state.tactic.courtType === 'full';
+  const physW = isFull ? CFG.court.fullCourtCanvasH : CFG.court.canvasW;
+  const physH = isFull ? CFG.court.canvasW : CFG.court.canvasH;
+
+  const padX = 16, padY = 8;
+  const maxTextW = physW - 48 - padX * 2;
+  let fs = isFull ? 17 : 14;
+  const font = s => `600 ${s}px -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif`;
+  ctx.font = font(fs);
+  let lines = wrapCaption(text, maxTextW);
+  while (lines.length > 2 && fs > 11) {
+    fs--;
+    ctx.font = font(fs);
+    lines = wrapCaption(text, maxTextW);
+  }
+  if (lines.length > 2) {
+    lines = lines.slice(0, 2);
+    while (ctx.measureText(lines[1] + '…').width > maxTextW) lines[1] = lines[1].slice(0, -1);
+    lines[1] += '…';
+  }
+
+  const lineH = Math.round(fs * 1.35);
+  const textW = Math.max(...lines.map(l => ctx.measureText(l).width));
+  const w = textW + padX * 2;
+  const h = lines.length * lineH + padY * 2;
+  const x = (physW - w) / 2;
+  const y = physH - 8 - h;
+  const r = Math.min(12, h / 2);
+
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+  ctx.shadowColor = 'rgba(0,0,0,.45)';
+  ctx.shadowBlur = 14;
+  ctx.shadowOffsetY = 4;
+  ctx.fillStyle = 'rgba(10,14,30,.86)';
+  ctx.fill();
+  ctx.shadowColor = 'transparent';
+  ctx.shadowBlur = 0;
+  ctx.shadowOffsetY = 0;
+  ctx.strokeStyle = 'rgba(233,69,96,.5)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  ctx.fillStyle = '#f4f7ff';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  lines.forEach((l, i) => ctx.fillText(l, physW / 2, y + padY + lineH * (i + 0.5)));
+  ctx.restore();
+}
+
+// ============================================================
+// RENDER ALL
+// ============================================================
+function renderAll() {
+  const isFull = state.tactic.courtType === 'full';
+  // Physical canvas dimensions (swapped for full court landscape)
+  const physW = isFull ? CFG.court.fullCourtCanvasH : CFG.court.canvasW;
+  const physH = isFull ? CFG.court.canvasW : CFG.court.canvasH;
+
+  // Clear physical canvas
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, physW, physH);
+
+  // Apply rotation transform for full court: court (x, y) -> screen (H - y, x),
+  // so the 28 m axis runs across the landscape canvas instead of down it.
+  if (isFull) {
+    ctx.translate(CFG.court.fullCourtCanvasH, 0);
+    ctx.rotate(Math.PI / 2);
+  }
+
+  drawCourt();
+
+  const frame = currentFrame();
+  const progress = state.playback.playing ? state.playback.progress : 1;
+
+  // Build a map of player render positions (interpolated during playback)
+  const playerRenderPos = {};
+  frame.players.forEach(p => {
+    const action = frame.actions.find(a => a.playerId === p.id);
+    if (action && state.playback.playing && action.type !== 'pass') {
+      // For pass actions, the player does NOT move
+      const path = getActionPath(action, 60);
+      const idx = Math.min(Math.floor(progress * (path.length - 1)), path.length - 1);
+      playerRenderPos[p.id] = path[idx];
+    } else {
+      playerRenderPos[p.id] = { x: p.x, y: p.y };
+    }
+  });
+
+  // Draw players at their render positions
+  frame.players.forEach(p => {
+    const pos = playerRenderPos[p.id];
+    const r = CFG.player.radius;
+    const color = p.team === 'offense' ? CFG.colors.offense : CFG.colors.defense;
+    const isSelected = p.id === state.selectedPlayerId;
+
+    ctx.beginPath();
+    ctx.arc(pos.x + 2, pos.y + 2, r, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(0,0,0,0.3)';
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.arc(pos.x, pos.y, r, 0, Math.PI * 2);
+    ctx.fillStyle = color;
+    ctx.fill();
+    ctx.strokeStyle = isSelected ? CFG.colors.selected : '#fff';
+    ctx.lineWidth = isSelected ? 3 : CFG.player.strokeWidth;
+    ctx.stroke();
+
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 13px -apple-system, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    if (isFull) {
+      // The board is turned 90° clockwise for landscape, so turn the jersey
+      // number back counter-clockwise to keep it upright on screen.
+      ctx.save();
+      ctx.translate(pos.x, pos.y);
+      ctx.rotate(-Math.PI / 2);
+      ctx.fillText(p.number, 0, 0);
+      ctx.restore();
+    } else {
+      ctx.fillText(p.number, pos.x, pos.y);
+    }
+  });
+
+  // Draw ball (follows holder or animates along pass path)
+  const passAction = frame.actions.find(a => a.type === 'pass');
+  if (state.playback.playing && passAction) {
+    // Animate ball along the pass path
+    const path = getActionPath(passAction, 60);
+    const idx = Math.min(Math.floor(progress * (path.length - 1)), path.length - 1);
+    const ballPos = path[idx];
+    drawBallAt(ballPos.x, ballPos.y);
+  } else if (frame.ball.holderId && playerRenderPos[frame.ball.holderId]) {
+    const holderPos = playerRenderPos[frame.ball.holderId];
+    drawBallAt(holderPos.x + CFG.player.radius + CFG.ball.radius + 2, holderPos.y - CFG.player.radius / 2);
+  } else {
+    drawBall(frame.ball);
+  }
+
+  // Draw actions (arrows) on top
+  drawActions(frame.actions, progress);
+
+  // Draw preview arrow
+  drawPreview();
+
+  // Reset transform
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+  // Subtitle sits in screen space so it stays upright in both court modes
+  drawCaption();
+  drawTitle();
+}
+
+function drawBallAt(bx, by) {
+  const r = CFG.ball.radius;
+  ctx.beginPath();
+  ctx.arc(bx + 1, by + 1, r, 0, Math.PI * 2);
+  ctx.fillStyle = 'rgba(0,0,0,0.2)';
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(bx, by, r, 0, Math.PI * 2);
+  ctx.fillStyle = CFG.colors.ball;
+  ctx.fill();
+  ctx.strokeStyle = CFG.colors.ballLine;
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(bx - r, by);
+  ctx.lineTo(bx + r, by);
+  ctx.strokeStyle = CFG.colors.ballLine;
+  ctx.lineWidth = 1;
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(bx, by - r);
+  ctx.lineTo(bx, by + r);
+  ctx.stroke();
+}
+
+// ============================================================
+// INITIALIZATION
+// ============================================================
+function init() {
+  resizeCanvas();
+  initPlayers();
+  renderAll();
+  updateFrameList();
+
+  const captionInput = document.getElementById('caption-input');
+  captionInput.addEventListener('input', () => {
+    if (!captionSessionOpen) { saveUndo(); captionSessionOpen = true; }
+    currentFrame().caption = captionInput.value;
+    document.getElementById('caption-count').textContent = `${captionInput.value.length}/80`;
+    refreshCaptionChip();
+    renderAll();
+  });
+  captionInput.addEventListener('blur', () => { captionSessionOpen = false; });
+  document.getElementById('caption-clear').addEventListener('click', () => {
+    if (!currentFrame().caption) return;
+    saveUndo();
+    currentFrame().caption = '';
+    captionInput.value = '';
+    captionSessionOpen = false;
+    document.getElementById('caption-count').textContent = '0/80';
+    refreshCaptionChip();
+    renderAll();
+    captionInput.focus();
+  });
+
+  const nameInput = document.getElementById('tactic-name');
+  nameInput.addEventListener('input', () => {
+    state.tactic.name = nameInput.value;
+    syncNameUI();
+    renderAll();
+  });
+  nameInput.addEventListener('blur', () => {
+    state.tactic.name = nameInput.value.trim();
+    syncNameUI();
+    renderAll();
+  });
+
+  window.addEventListener('resize', () => {
+    resizeCanvas();
+    renderAll();
+  });
+
+  showInfo('欢迎使用篮球战术板！选择工具开始绘制', 3000);
+}
+
+init();
+</script>
+</body>
+</html>
