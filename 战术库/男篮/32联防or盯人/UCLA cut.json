@@ -1,0 +1,360 @@
+{
+  "name": "UCLA cut",
+  "courtType": "half",
+  "frames": [
+    {
+      "id": "mwbqwwwy5thanu",
+      "players": [
+        {
+          "id": "mwbqwwx6zzsn60",
+          "team": "offense",
+          "number": "1",
+          "x": 395,
+          "y": 63.11428571428576,
+          "hasBall": true
+        },
+        {
+          "id": "mwbqwwx6jlhyns",
+          "team": "offense",
+          "number": "2",
+          "x": 151.20000000000002,
+          "y": 393.40000000000003,
+          "hasBall": false
+        },
+        {
+          "id": "mwbqwwx6394bt9",
+          "team": "offense",
+          "number": "3",
+          "x": 638.8,
+          "y": 393.40000000000003,
+          "hasBall": false
+        },
+        {
+          "id": "mwbqwwx6qfeaa1",
+          "team": "offense",
+          "number": "4",
+          "x": 261.6,
+          "y": 568.2,
+          "hasBall": false
+        },
+        {
+          "id": "mwbqwwx6jefj8v",
+          "team": "offense",
+          "number": "5",
+          "x": 503.2207171314741,
+          "y": 302.62857142857155,
+          "hasBall": false
+        },
+        {
+          "id": "mwbqwwx6pybfnx",
+          "team": "defense",
+          "number": "1",
+          "x": 396.57370517928285,
+          "y": 173.2,
+          "hasBall": false
+        },
+        {
+          "id": "mwbqwwx617siu9",
+          "team": "defense",
+          "number": "2",
+          "x": 183.4,
+          "y": 444,
+          "hasBall": false
+        },
+        {
+          "id": "mwbqwwx6ivfexn",
+          "team": "defense",
+          "number": "3",
+          "x": 606.6,
+          "y": 444,
+          "hasBall": false
+        },
+        {
+          "id": "mwbqwwx65y1wk1",
+          "team": "defense",
+          "number": "4",
+          "x": 284.6,
+          "y": 586.6,
+          "hasBall": false
+        },
+        {
+          "id": "mwbqwwx6mbflas",
+          "team": "defense",
+          "number": "5",
+          "x": 472.3521912350597,
+          "y": 365.02857142857147,
+          "hasBall": false
+        }
+      ],
+      "ball": {
+        "x": 395,
+        "y": 278.40000000000003,
+        "holderId": "mwbqwwx6zzsn60"
+      },
+      "actions": [
+        {
+          "id": "mwbqzf2lfvwspl",
+          "type": "pass",
+          "startX": 395,
+          "startY": 63.11428571428576,
+          "endX": 638.8,
+          "endY": 393.40000000000003,
+          "playerId": "mwbqwwx6zzsn60",
+          "color": "#FFD700",
+          "targetPlayerId": "mwbqwwx6394bt9",
+          "transferBall": true
+        },
+        {
+          "id": "mwbqzm7tdnnf4e",
+          "type": "screen",
+          "startX": 503.2207171314741,
+          "startY": 302.62857142857155,
+          "endX": 398.1474103585657,
+          "endY": 209.39285714285714,
+          "controlPoints": [
+            {
+              "x": 393.4262948207171,
+              "y": 295.82142857142856
+            }
+          ],
+          "playerId": "mwbqwwx6jefj8v",
+          "color": "#FFD700"
+        },
+        {
+          "id": "mwbr3n6o412v7a",
+          "type": "move",
+          "startX": 472.3521912350597,
+          "startY": 365.02857142857147,
+          "endX": 396.57370517928285,
+          "endY": 281.67857142857144,
+          "controlPoints": [
+            {
+              "x": 406.0159362549801,
+              "y": 338.25
+            }
+          ],
+          "playerId": "mwbqwwx6mbflas",
+          "color": "#FFD700"
+        }
+      ],
+      "duration": 1500,
+      "caption": "面对盯人防守，过半场后即可发起，无需等人落位。"
+    },
+    {
+      "id": "mwbr3pggrnzb0o",
+      "players": [
+        {
+          "id": "mwbr3pggio67vt",
+          "team": "offense",
+          "number": "1",
+          "x": 395,
+          "y": 63.11428571428576,
+          "hasBall": true
+        },
+        {
+          "id": "mwbr3pggy430kt",
+          "team": "offense",
+          "number": "2",
+          "x": 151.20000000000002,
+          "y": 393.40000000000003,
+          "hasBall": false
+        },
+        {
+          "id": "mwbr3pgg6fvmea",
+          "team": "offense",
+          "number": "3",
+          "x": 638.8,
+          "y": 393.40000000000003,
+          "hasBall": true
+        },
+        {
+          "id": "mwbr3pgg39p8y3",
+          "team": "offense",
+          "number": "4",
+          "x": 261.6,
+          "y": 568.2,
+          "hasBall": false
+        },
+        {
+          "id": "mwbr3pggph5pqx",
+          "team": "offense",
+          "number": "5",
+          "x": 398.1474103585657,
+          "y": 209.39285714285714,
+          "hasBall": false
+        },
+        {
+          "id": "mwbr3pgg47y7hr",
+          "team": "defense",
+          "number": "1",
+          "x": 396.57370517928285,
+          "y": 173.2,
+          "hasBall": false
+        },
+        {
+          "id": "mwbr3pgg36z1em",
+          "team": "defense",
+          "number": "2",
+          "x": 183.4,
+          "y": 444,
+          "hasBall": false
+        },
+        {
+          "id": "mwbr3pgg20vo0u",
+          "team": "defense",
+          "number": "3",
+          "x": 606.6,
+          "y": 444,
+          "hasBall": false
+        },
+        {
+          "id": "mwbr3pgg8arljj",
+          "team": "defense",
+          "number": "4",
+          "x": 284.6,
+          "y": 586.6,
+          "hasBall": false
+        },
+        {
+          "id": "mwbr3pggmz7tjr",
+          "team": "defense",
+          "number": "5",
+          "x": 396.57370517928285,
+          "y": 281.67857142857144,
+          "hasBall": false
+        }
+      ],
+      "ball": {
+        "x": 638.8,
+        "y": 393.40000000000003,
+        "holderId": "mwbr3pgg6fvmea"
+      },
+      "actions": [
+        {
+          "id": "mwbr4gbrav28m3",
+          "type": "move",
+          "startX": 395,
+          "startY": 63.11428571428576,
+          "endX": 428.0478087649402,
+          "endY": 545.6785714285714,
+          "controlPoints": [
+            {
+              "x": 530.3386454183267,
+              "y": 232.96428571428572
+            }
+          ],
+          "playerId": "mwbr3pggio67vt",
+          "color": "#FFD700"
+        },
+        {
+          "id": "mwbr4kbugbkow2",
+          "type": "pass",
+          "startX": 638.8,
+          "startY": 393.40000000000003,
+          "endX": 428.0478087649402,
+          "endY": 545.6785714285714,
+          "playerId": "mwbr3pgg6fvmea",
+          "color": "#FFD700",
+          "targetPlayerId": "mwbr3pggio67vt",
+          "passToEndpoint": true,
+          "transferBall": true
+        }
+      ],
+      "duration": 1500,
+      "caption": ""
+    },
+    {
+      "id": "mwbr5yqdroumo7",
+      "players": [
+        {
+          "id": "mwbr5yqdjh33g1",
+          "team": "offense",
+          "number": "1",
+          "x": 428.0478087649402,
+          "y": 545.6785714285714,
+          "hasBall": true
+        },
+        {
+          "id": "mwbr5yqd3n6ac1",
+          "team": "offense",
+          "number": "2",
+          "x": 151.20000000000002,
+          "y": 393.40000000000003,
+          "hasBall": false
+        },
+        {
+          "id": "mwbr5yqdrt1kjp",
+          "team": "offense",
+          "number": "3",
+          "x": 638.8,
+          "y": 393.40000000000003,
+          "hasBall": true
+        },
+        {
+          "id": "mwbr5yqd9pzslu",
+          "team": "offense",
+          "number": "4",
+          "x": 261.6,
+          "y": 568.2,
+          "hasBall": false
+        },
+        {
+          "id": "mwbr5yqdlcw5ce",
+          "team": "offense",
+          "number": "5",
+          "x": 398.1474103585657,
+          "y": 209.39285714285714,
+          "hasBall": false
+        },
+        {
+          "id": "mwbr5yqdce7utc",
+          "team": "defense",
+          "number": "1",
+          "x": 396.57370517928285,
+          "y": 173.2,
+          "hasBall": false
+        },
+        {
+          "id": "mwbr5yqdelebnt",
+          "team": "defense",
+          "number": "2",
+          "x": 183.4,
+          "y": 444,
+          "hasBall": false
+        },
+        {
+          "id": "mwbr5yqdaqe9er",
+          "team": "defense",
+          "number": "3",
+          "x": 606.6,
+          "y": 444,
+          "hasBall": false
+        },
+        {
+          "id": "mwbr5yqd0uqiw9",
+          "team": "defense",
+          "number": "4",
+          "x": 284.6,
+          "y": 586.6,
+          "hasBall": false
+        },
+        {
+          "id": "mwbr5yqdosz6nn",
+          "team": "defense",
+          "number": "5",
+          "x": 396.57370517928285,
+          "y": 281.67857142857144,
+          "hasBall": false
+        }
+      ],
+      "ball": {
+        "x": 428.0478087649402,
+        "y": 545.6785714285714,
+        "holderId": "mwbr5yqdjh33g1"
+      },
+      "actions": [],
+      "duration": 1500,
+      "caption": ""
+    }
+  ]
+}
