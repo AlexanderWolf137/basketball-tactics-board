@@ -128,7 +128,7 @@
           "endX": 411.23287671232873,
           "endY": 306.9872122762148,
           "playerId": "mwc9rt4pan89c2",
-          "color": "#4ECDC4"
+          "color": "#FF6B6B"
         },
         {
           "id": "mwc9xj4tcewb5s",
@@ -148,7 +148,7 @@
           "endX": 153.31050228310502,
           "endY": 445.62659846547314,
           "playerId": "mwc9rt4pocwkt2",
-          "color": "#4ECDC4"
+          "color": "#FF6B6B"
         }
       ],
       "duration": 1500,
@@ -163,7 +163,7 @@
           "number": "1",
           "x": 391.8273092369478,
           "y": 101.34767401672774,
-          "hasBall": true
+          "hasBall": false
         },
         {
           "id": "mwc9yy5ad5b1vg",
@@ -289,7 +289,7 @@
           "number": "1",
           "x": 472.55707762557074,
           "y": 443.8260869565217,
-          "hasBall": true
+          "hasBall": false
         },
         {
           "id": "mwca1la54zusgi",
@@ -435,7 +435,7 @@
           "number": "1",
           "x": 216.43835616438355,
           "y": 616.6751918158567,
-          "hasBall": true
+          "hasBall": false
         },
         {
           "id": "mwca550w27zurb",
@@ -595,7 +595,7 @@
           "number": "1",
           "x": 216.43835616438355,
           "y": 616.6751918158567,
-          "hasBall": true
+          "hasBall": false
         },
         {
           "id": "mwca8bodmzdfan",
@@ -701,7 +701,7 @@
           "number": "1",
           "x": 216.43835616438355,
           "y": 616.6751918158567,
-          "hasBall": true
+          "hasBall": false
         },
         {
           "id": "mwcaa92rpoo2pe",
@@ -717,7 +717,7 @@
           "number": "3",
           "x": 577.1689497716895,
           "y": 288.98209718670074,
-          "hasBall": true
+          "hasBall": false
         },
         {
           "id": "mwcaa92r2cmkjf",
@@ -876,7 +876,7 @@
           "number": "3",
           "x": 577.1689497716895,
           "y": 288.98209718670074,
-          "hasBall": true
+          "hasBall": false
         },
         {
           "id": "mwcaddb7aifitg",
@@ -884,7 +884,7 @@
           "number": "4",
           "x": 257.92237442922374,
           "y": 303.386189258312,
-          "hasBall": true
+          "hasBall": false
         },
         {
           "id": "mwcaddb70n2llb",
@@ -959,7 +959,7 @@
           "endX": 616.8493150684932,
           "endY": 389.81074168797954,
           "playerId": "mwcaddb7xkhhu8",
-          "color": "#FFD700"
+          "color": "#FF6B6B"
         },
         {
           "id": "mwcaeddq4v1d7m",
@@ -1005,7 +1005,7 @@
           "endX": 505.0228310502283,
           "endY": 294.38363171355496,
           "playerId": "mwcaddb7o7cioj",
-          "color": "#FFD700"
+          "color": "#FF6B6B"
         },
         {
           "id": "mwcafi51f552q1",
@@ -1015,7 +1015,7 @@
           "endX": 488.78995433789953,
           "endY": 339.3964194373401,
           "playerId": "mwcaddb70n2llb",
-          "color": "#FF6B6B"
+          "color": "#FFD700"
         },
         {
           "id": "mwcafmktdjx51e",
@@ -1056,7 +1056,7 @@
           "number": "3",
           "x": 665.5479452054794,
           "y": 377.20716112531966,
-          "hasBall": true
+          "hasBall": false
         },
         {
           "id": "mwcafrni0h5a1x",
@@ -1064,7 +1064,7 @@
           "number": "4",
           "x": 156.91780821917808,
           "y": 454.62915601023013,
-          "hasBall": true
+          "hasBall": false
         },
         {
           "id": "mwcafrnidhneif",

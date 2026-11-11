@@ -407,7 +407,7 @@
           "number": "1",
           "x": 270.54794520547944,
           "y": 297.9846547314578,
-          "hasBall": true
+          "hasBall": false
         },
         {
           "id": "mwcb2nxvd8644o",
@@ -555,7 +555,7 @@
           "number": "3",
           "x": 569.9543378995434,
           "y": 306.9872122762148,
-          "hasBall": true
+          "hasBall": false
         },
         {
           "id": "mwcb3ps6selfza",

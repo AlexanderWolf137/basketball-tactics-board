@@ -134,7 +134,7 @@
             }
           ],
           "playerId": "mwbqwwx6mbflas",
-          "color": "#FFD700"
+          "color": "#FF6B6B"
         }
       ],
       "duration": 1500,
@@ -149,7 +149,7 @@
           "number": "1",
           "x": 395,
           "y": 63.11428571428576,
-          "hasBall": true
+          "hasBall": false
         },
         {
           "id": "mwbr3pggy430kt",
@@ -288,7 +288,7 @@
           "number": "3",
           "x": 638.8,
           "y": 393.40000000000003,
-          "hasBall": true
+          "hasBall": false
         },
         {
           "id": "mwbr5yqd9pzslu",

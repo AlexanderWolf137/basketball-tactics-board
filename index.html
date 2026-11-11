@@ -315,6 +315,9 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
         <button class="btn btn-sm btn-secondary" style="background:#4ECDC4;border:none;color:#000;font-size:11px" onclick="setArrowColor('#4ECDC4')">青</button>
         <button class="btn btn-sm btn-secondary" style="background:#A8E6CF;border:none;color:#000;font-size:11px" onclick="setArrowColor('#A8E6CF')">绿</button>
       </div>
+      <div class="tool-row tool-hint" style="margin-top:6px">
+        <label style="font-size:11px;color:#5a6b80">选中球员时自动切默认色：进攻金 / 防守红</label>
+      </div>
     </div>
 
     <!-- Frame duration -->
@@ -463,7 +466,7 @@ const CFG = {
     paint: '#C4834F',
     offense: '#E74C3C', defense: '#3498DB',
     ball: '#E67E22', ballLine: '#8B4513',
-    arrow: '#FFD700', arrowHighlight: '#FF6B6B',
+    arrow: '#FFD700', arrowOffense: '#FFD700', arrowDefense: '#FF6B6B',
     selected: '#00FF88',
     rim: '#FF6B35', backboard: '#E8E8E8',
   },
@@ -1279,6 +1282,10 @@ function addFrame() {
     return { ...p, id: uid() };
   });
 
+  // Copied players carry the old frame's possession flags; the branch below
+  // decides who actually holds the ball now.
+  newFrame.players.forEach(p => { p.hasBall = false; });
+
   // Handle ball possession
   // Check if there's a pass action that transfers the ball
   const passAction = frame.actions.find(a => a.type === 'pass' && a.transferBall && a.targetPlayerId);
@@ -2067,6 +2074,10 @@ function startActionFromPlayer(type) {
   renderAll();
 }
 
+function defaultArrowColorFor(player) {
+  return player && player.team === 'defense' ? CFG.colors.arrowDefense : CFG.colors.arrowOffense;
+}
+
 function setArrowColor(color) {
   state.currentArrowColor = color;
   document.getElementById('arrow-color').value = color;
@@ -2270,6 +2281,8 @@ function onMouseDown(e) {
       state.interaction = { type: 'dragging_player', data: { player, offsetX: pt.x - player.x, offsetY: pt.y - player.y } };
       state.selectedPlayerId = player.id;
       state.selectedArrowId = null;
+      state.currentArrowColor = defaultArrowColorFor(player);
+      document.getElementById('arrow-color').value = state.currentArrowColor;
       canvas.style.cursor = 'grabbing';
       updatePlayerActionPanel();
       return;
