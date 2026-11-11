@@ -6,7 +6,8 @@
 <title>篮球战术板</title>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
-body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #1a1a2e; color: #e0e0e0; overflow: hidden; height: 100vh; display: flex; flex-direction: column; user-select: none; }
+html { overflow: hidden; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #1a1a2e; color: #e0e0e0; overflow: hidden; height: 100vh; height: 100dvh; display: flex; flex-direction: column; user-select: none; overscroll-behavior: none; -webkit-tap-highlight-color: transparent; }
 
 /* ── Header ── */
 #header { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; padding: 8px 16px; background: #16213e; border-bottom: 1px solid #0f3460; min-height: 44px; flex-shrink: 0; }
@@ -50,14 +51,14 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 
 /* ── Canvas area ── */
 #canvas-wrap { flex: 1; display: flex; align-items: center; justify-content: center; background: #111; position: relative; overflow: hidden; }
-#canvas { cursor: crosshair; border-radius: 4px; box-shadow: 0 4px 24px rgba(0,0,0,.5); }
+#canvas { cursor: crosshair; border-radius: 4px; box-shadow: 0 4px 24px rgba(0,0,0,.5); touch-action: none; }
 
 /* ── Bottom panel ── */
 #bottom { flex-shrink: 0; background: #16213e; border-top: 1px solid #0f3460; }
 
 /* Playback controls */
 #playback { display: flex; align-items: center; gap: 10px; padding: 8px 16px; border-bottom: 1px solid #0f3460; }
-#playback .ctrl-btn { width: 32px; height: 32px; border-radius: 50%; border: none; background: #0f3460; color: #a0b4d0; cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; transition: all .15s; }
+#playback .ctrl-btn { width: 32px; height: 32px; flex-shrink: 0; border-radius: 50%; border: none; background: #0f3460; color: #a0b4d0; cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; transition: all .15s; }
 #playback .ctrl-btn:hover { background: #e94560; color: #fff; }
 #playback .ctrl-btn.active { background: #e94560; color: #fff; }
 #progress-wrap { flex: 1; display: flex; align-items: center; gap: 8px; }
@@ -66,6 +67,26 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 #progress-bar .handle { width: 14px; height: 14px; background: #e94560; border: 2px solid #fff; border-radius: 50%; position: absolute; top: 50%; transform: translate(-50%, -50%); cursor: grab; display: none; }
 #frame-info { font-size: 12px; color: #7a8ba8; min-width: 60px; text-align: right; }
 #speed-select { background: #0f3460; color: #a0b4d0; border: 1px solid #0f3460; padding: 3px 6px; border-radius: 4px; font-size: 12px; cursor: pointer; }
+
+/* Context action bar — the touch stand-in for right-click / Esc / Del */
+#action-bar { display: none; align-items: center; gap: 10px; padding: 7px 16px; background: #141c33; border-bottom: 1px solid #0f3460; }
+#action-bar.show { display: flex; }
+#action-hint { flex: 1; min-width: 0; font-size: 12px; color: #7a8ba8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#action-bar .action-btns { display: flex; gap: 6px; flex-shrink: 0; }
+.act-btn { min-height: 38px; padding: 8px 16px; border: 1px solid #0f3460; border-radius: 6px; background: #0f3460; color: #a0b4d0; cursor: pointer; font-size: 13px; font-weight: 500; white-space: nowrap; transition: background .15s, color .15s, border-color .15s; }
+.act-btn:hover { background: #1a4a80; color: #fff; }
+.act-btn.act-primary { background: #e94560; border-color: #e94560; color: #fff; }
+.act-btn.act-primary:hover { background: #c73650; }
+.act-btn:disabled { opacity: .4; cursor: not-allowed; }
+.act-btn:disabled:hover { background: #0f3460; color: #a0b4d0; }
+.act-btn.act-primary:disabled:hover { background: #e94560; color: #fff; }
+@media (max-width: 600px) {
+  #action-bar { flex-wrap: wrap; gap: 6px; padding: 6px 10px; }
+  /* Stay on one line: a taller bar would resize the court mid-draw. */
+  #action-hint { flex: 1 1 100%; }
+  #action-bar .action-btns { flex: 1; }
+  .act-btn { flex: 1; min-height: 44px; padding: 8px 6px; }
+}
 
 /* Per-frame caption bar */
 #caption-bar { display: flex; align-items: center; gap: 8px; padding: 8px 16px; background: #141c33; border-bottom: 1px solid #0f3460; }
@@ -86,6 +107,14 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .frame-thumb .frame-label { position: absolute; bottom: 2px; left: 0; right: 0; text-align: center; font-size: 10px; color: #7a8ba8; background: rgba(22,33,62,.8); }
 .frame-thumb .frame-delete { position: absolute; top: 2px; right: 2px; width: 16px; height: 16px; border-radius: 50%; background: rgba(233,69,96,.8); color: #fff; border: none; cursor: pointer; font-size: 10px; display: none; align-items: center; justify-content: center; line-height: 1; }
 .frame-thumb:hover .frame-delete { display: flex; }
+.frame-thumb .frame-dup { position: absolute; top: 2px; right: 20px; width: 16px; height: 16px; border-radius: 50%; background: rgba(15,52,96,.9); color: #cfe0f5; border: none; cursor: pointer; font-size: 10px; display: none; align-items: center; justify-content: center; line-height: 1; }
+.frame-thumb:hover .frame-dup { display: flex; }
+.frame-thumb.no-delete .frame-dup { right: 2px; }
+/* No hover on a touchscreen, so the frame actions have to stay visible. */
+@media (hover: none) {
+  .frame-thumb .frame-delete, .frame-thumb .frame-dup { display: flex; width: 24px; height: 24px; font-size: 12px; }
+  .frame-thumb .frame-dup { right: 28px; }
+}
 .frame-thumb .frame-caption { position: absolute; top: 2px; left: 2px; padding: 1px 5px; border-radius: 4px; background: rgba(233,69,96,.85); color: #fff; font-size: 9px; line-height: 1.4; display: none; align-items: center; pointer-events: none; }
 #add-frame-btn { width: 100px; min-width: 100px; height: 60px; background: transparent; border: 2px dashed #0f3460; border-radius: 6px; cursor: pointer; color: #7a8ba8; font-size: 24px; display: flex; align-items: center; justify-content: center; transition: all .15s; }
 #add-frame-btn:hover { border-color: #e94560; color: #e94560; }
@@ -98,13 +127,13 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .dropdown-item:hover { background: #0f3460; color: #fff; }
 
 /* ── Context info overlay ── */
-#info-overlay { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); background: rgba(22,33,62,.9); color: #a0b4d0; padding: 6px 16px; border-radius: 20px; font-size: 12px; pointer-events: none; opacity: 0; transition: opacity .3s; z-index: 10; }
+#info-overlay { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); width: max-content; max-width: calc(100% - 24px); text-align: center; line-height: 1.45; background: rgba(22,33,62,.9); color: #a0b4d0; padding: 6px 16px; border-radius: 20px; font-size: 12px; pointer-events: none; opacity: 0; transition: opacity .3s; z-index: 10; }
 #info-overlay.show { opacity: 1; }
 
 /* ── Modal ── */
 .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.6); z-index: 200; align-items: center; justify-content: center; }
 .modal-overlay.show { display: flex; }
-.modal { background: #16213e; border-radius: 12px; padding: 24px; min-width: 300px; max-width: 500px; border: 1px solid #0f3460; }
+.modal { background: #16213e; border-radius: 12px; padding: 24px; min-width: min(300px, calc(100vw - 24px)); max-width: min(500px, calc(100vw - 24px)); max-height: calc(100vh - 24px); max-height: calc(100dvh - 24px); overflow-y: auto; border: 1px solid #0f3460; }
 .modal h2 { font-size: 16px; margin-bottom: 16px; color: #e94560; }
 .modal .form-row { margin-bottom: 12px; }
 .modal .form-row label { display: block; font-size: 12px; color: #7a8ba8; margin-bottom: 4px; }
@@ -116,6 +145,92 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 ::-webkit-scrollbar-track { background: #1a1a2e; }
 ::-webkit-scrollbar-thumb { background: #0f3460; border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: #1a4a80; }
+* { scrollbar-width: thin; scrollbar-color: #0f3460 #1a1a2e; }
+
+/* ── Portrait phones: the toolbar becomes a swipeable ribbon under the court,
+      so the court keeps the full screen width instead of sharing it with a 200px column ── */
+@media (max-width: 700px) and (min-height: 560px) {
+  #header { padding: 6px 10px; gap: 6px; min-height: 40px; flex-wrap: nowrap; }
+  #header .title { flex: 1 1 auto; font-size: 14px; }
+  #header .actions { gap: 6px; }
+  #header .btn { padding: 7px 11px; font-size: 15px; }
+  .btn-label { display: none; }
+
+  #main { flex-direction: column; }
+  #canvas-wrap { order: 1; }
+  #toolbar { order: 2; width: 100%; height: 96px; flex-direction: row; align-items: center; gap: 8px; padding: 8px 10px; overflow-x: auto; overflow-y: hidden; border-right: none; border-top: 1px solid #0f3460; }
+  #toolbar .tool-section { flex: 0 0 auto; display: flex; align-items: center; gap: 8px; padding: 8px 10px; }
+  #toolbar .tool-section > * { margin: 0 !important; }
+  #toolbar .tool-section h3, #toolbar .tool-hint { display: none; }
+  #toolbar .tool-row { margin-bottom: 0; }
+  /* Keyboard help is dead weight on a phone */
+  #toolbar .tool-section:last-child { display: none; }
+  #player-action-panel .tool-btn-group { display: inline-flex; flex-wrap: nowrap; gap: 3px; }
+  #player-action-panel .tool-btn { min-width: 46px; padding: 12px 3px; font-size: 11px; }
+  /* 「选择」is redundant here: the action bar's 取消 already leaves drawing mode. */
+  #btn-select-mode { display: none; }
+
+  /* A thumb needs ~44px, and the ribbon has the vertical room to spare. */
+  #btn-half, #btn-full { min-width: 44px; padding: 11px 6px; font-size: 12px; }
+  #toolbar .btn-sm { padding: 10px 9px; font-size: 12px; }
+  #toolbar input[type="number"] { width: 58px; padding: 8px 6px; }
+  #toolbar input[type="color"] { width: 42px; height: 38px; }
+
+  #playback { padding: 6px 10px; gap: 6px; }
+  #playback .ctrl-btn { width: 38px; height: 38px; }
+  #frame-info { min-width: 46px; font-size: 11px; }
+  #caption-bar { padding: 6px 10px; gap: 6px; }
+  #caption-count { display: none; }
+  #frame-list { padding: 8px 10px; gap: 6px; min-height: 66px; }
+  .frame-thumb, #add-frame-btn { width: 88px; min-width: 88px; height: 50px; }
+}
+
+/* ── Landscape phones and short windows: keep the side column, shrink everything else ── */
+@media (max-height: 559px) {
+  #header { padding: 4px 10px; min-height: 36px; }
+  #header .btn { padding: 7px 11px; }
+  .btn-label { display: none; }
+  #toolbar { width: 158px; padding: 8px; gap: 8px; }
+  #toolbar .tool-section { padding: 8px; }
+  #toolbar .tool-section h3 { font-size: 10px; margin-bottom: 6px; }
+  #toolbar .tool-section:last-child { display: none; }
+  #toolbar .tool-hint { display: none; }
+  .tool-btn { min-width: 50px; padding: 7px 0; font-size: 11px; }
+  /* The panel has to fit the short toolbar without scrolling; the selected
+     player is already highlighted on the court, so the heading can go. */
+  #toolbar #player-action-panel { padding: 4px; }
+  #player-action-panel h3 { display: none; }
+  #player-action-panel .tool-btn { padding: 5px 0; }
+  #player-action-panel .tool-btn-group { margin-bottom: 4px !important; }
+  #btn-half, #btn-full { min-width: 44px; padding: 8px 4px; }
+  #toolbar .btn-sm { padding: 7px 8px; }
+  #toolbar input[type="number"] { width: 54px; padding: 5px 6px; }
+  #toolbar input[type="color"] { width: 38px; height: 32px; }
+  #playback { padding: 3px 10px; gap: 8px; }
+  #playback .ctrl-btn { width: 32px; height: 32px; font-size: 13px; }
+  #caption-bar { padding: 4px 10px; }
+  #caption-input { padding: 4px 8px; }
+  #frame-list { padding: 6px 10px; min-height: 56px; }
+  .frame-thumb, #add-frame-btn { width: 78px; min-width: 78px; height: 42px; }
+  #action-bar { padding: 5px 10px; flex-wrap: nowrap; gap: 8px; }
+  #action-hint { flex: 1 1 auto; }
+  #action-bar .action-btns { flex: 0 0 auto; }
+  .act-btn { flex: 0 0 auto; min-height: 36px; padding: 6px 10px; font-size: 12px; }
+  /* Vertical space is scarce here, so the bar takes the caption row's slot
+     instead of stacking on top of it — otherwise the court shrinks mid-draw. */
+  #action-bar.show ~ #caption-bar { display: none; }
+}
+
+/* iOS Safari zooms the whole page when a focused input is smaller than 16px. */
+@media (max-width: 700px), (max-height: 559px) {
+  #header .title input, #caption-input, #toolbar input, #speed-select,
+  .modal .form-row input, .modal .form-row select { font-size: 16px; }
+  #header .title input { padding: 5px 8px; }
+  #speed-select { padding: 5px 4px; flex-shrink: 0; }
+  #caption-clear { width: 30px; height: 30px; flex-shrink: 0; }
+  #toolbar .btn-sm { padding: 9px 10px; }
+  #toolbar input[type="number"] { padding: 7px 6px; }
+}
 </style>
 </head>
 <body>
@@ -124,18 +239,18 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 <div id="header">
   <div class="title"><input id="tactic-name" value="新战术" spellcheck="false" maxlength="40" title="战术名称：随 JSON 保存，并显示在导出图左上角"></div>
   <div class="actions">
-    <button class="btn btn-secondary" onclick="saveProject()">💾 保存</button>
-    <button class="btn btn-secondary" onclick="document.getElementById('load-input').click()">📂 加载</button>
+    <button class="btn btn-secondary" onclick="saveProject()" title="保存工程文件（.json）" aria-label="保存">💾<span class="btn-label"> 保存</span></button>
+    <button class="btn btn-secondary" onclick="document.getElementById('load-input').click()" title="加载工程文件（.json）" aria-label="加载">📂<span class="btn-label"> 加载</span></button>
     <input type="file" id="load-input" accept=".json" style="display:none" onchange="loadProject(event)">
     <div class="dropdown">
-      <button class="btn btn-primary" onclick="toggleExportMenu()">📤 导出 ▾</button>
+      <button class="btn btn-primary" onclick="toggleExportMenu()" title="导出 PNG / GIF" aria-label="导出">📤<span class="btn-label"> 导出</span> ▾</button>
       <div class="dropdown-menu" id="export-menu">
         <div class="dropdown-item" onclick="exportCurrentPNG()">🖼️ 当前帧 PNG</div>
         <div class="dropdown-item" onclick="exportAllPNG()">🖼️ 全部帧 PNG</div>
         <div class="dropdown-item" onclick="exportGIF()">🎞️ GIF 动图</div>
       </div>
     </div>
-    <button class="btn btn-secondary btn-sm" onclick="toggleSettings()">⚙️</button>
+    <button class="btn btn-secondary btn-sm" onclick="toggleSettings()" title="设置球员名称" aria-label="设置">⚙️</button>
   </div>
 </div>
 
@@ -163,7 +278,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
         <label>🔵 防守方</label>
         <input type="number" id="defense-count" value="5" min="0" max="5" onchange="setPlayerCount('defense',this.value)">
       </div>
-      <div class="tool-row" style="margin-top:6px">
+      <div class="tool-row tool-hint" style="margin-top:6px">
         <label style="font-size:11px;color:#5a6b80">点击球场放置，拖拽移动</label>
       </div>
     </div>
@@ -182,7 +297,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
         <button class="tool-btn" id="btn-action-dribble" onclick="startActionFromPlayer('dribble')">⛹ 运球</button>
         <button class="tool-btn" id="btn-action-screen" onclick="startActionFromPlayer('screen')">🧱 挡拆</button>
       </div>
-      <div class="tool-row" style="margin-top:8px;">
+      <div class="tool-row tool-hint" style="margin-top:8px;">
         <label style="font-size:11px;color:#5a6b80" id="player-action-hint">选中球员后可执行操作</label>
       </div>
     </div>
@@ -234,6 +349,15 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 
 <!-- Bottom panel -->
 <div id="bottom">
+  <div id="action-bar">
+    <span id="action-hint"></span>
+    <div class="action-btns">
+      <button class="act-btn act-primary" id="act-finish" onclick="finishDrawingFromBar()">✅ 完成</button>
+      <button class="act-btn" id="act-back" onclick="popControlPoint()">↩ 退一点</button>
+      <button class="act-btn" id="act-delete" onclick="deleteSelected()">🗑 删除</button>
+      <button class="act-btn" id="act-cancel" onclick="cancelInteraction()">✕ 取消</button>
+    </div>
+  </div>
   <div id="playback">
     <button class="ctrl-btn" onclick="prevFrame()" title="上一帧">⏮</button>
     <button class="ctrl-btn" id="btn-play" onclick="togglePlay()" title="播放/暂停">▶</button>
@@ -548,17 +672,22 @@ function resizeCanvas() {
   const physW = isFull ? CFG.court.fullCourtCanvasH : CFG.court.canvasW;
   const physH = isFull ? CFG.court.canvasW : CFG.court.canvasH;
   const aspect = physW / physH;
-  let w = wrap.clientWidth - 40;
-  let h = wrap.clientHeight - 40;
+  const pad = (wrap.clientWidth < 520 || wrap.clientHeight < 320) ? 16 : 40;
+  let w = wrap.clientWidth - pad;
+  let h = wrap.clientHeight - pad;
   if (w / h > aspect) { w = h * aspect; } else { h = w / aspect; }
-  w = Math.max(400, Math.floor(w));
-  h = Math.max(300, Math.floor(h));
+  // Shrink rather than clip: a hard minimum used to push the court past the
+  // edge of the window on phones and stretch it out of proportion.
+  if (w < 120) { w = 120; h = w / aspect; }
+  w = Math.max(1, Math.floor(w));
+  h = Math.max(1, Math.floor(h));
   canvas.style.width = w + 'px';
   canvas.style.height = h + 'px';
   canvas.width = physW * dpr;
   canvas.height = physH * dpr;
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   renderAll();
+  revealPlayerPanel();
 }
 
 function canvasCoords(e) {
@@ -1265,9 +1394,18 @@ function updateFrameList() {
       const delBtn = document.createElement('button');
       delBtn.className = 'frame-delete';
       delBtn.textContent = '✕';
+      delBtn.title = '删除本帧';
       delBtn.onclick = (e) => deleteFrame(idx, e);
       thumb.appendChild(delBtn);
     }
+
+    const dupBtn = document.createElement('button');
+    dupBtn.className = 'frame-dup';
+    dupBtn.textContent = '⧉';
+    dupBtn.title = '复制本帧';
+    dupBtn.onclick = (e) => { e.stopPropagation(); duplicateFrame(idx); };
+    thumb.appendChild(dupBtn);
+    if (state.tactic.frames.length <= 1) thumb.classList.add('no-delete');
 
     list.insertBefore(thumb, addBtn);
 
@@ -1719,6 +1857,7 @@ function setTool(tool) {
   } else {
     canvas.style.cursor = 'crosshair';
   }
+  renderAll();
 }
 
 // Player action panel functions
@@ -1728,6 +1867,22 @@ function enterSelectMode() {
   canvas.style.cursor = 'default';
   updatePlayerActionPanel();
   renderAll();
+}
+
+// The panel can sit past the edge of a scrolling toolbar (phone ribbon, short
+// window). Scroll the toolbar only — scrollIntoView would drag the page too.
+function revealPlayerPanel() {
+  const panel = document.getElementById('player-action-panel');
+  if (panel.style.display === 'none') return;
+  const tb = document.getElementById('toolbar');
+  const cs = getComputedStyle(tb);
+  const pr = panel.getBoundingClientRect(), tr = tb.getBoundingClientRect();
+  const top = tr.top + parseFloat(cs.paddingTop), bottom = tr.bottom - parseFloat(cs.paddingBottom);
+  const left = tr.left + parseFloat(cs.paddingLeft), right = tr.right - parseFloat(cs.paddingRight);
+  if (pr.right > right) tb.scrollLeft += pr.right - right;
+  else if (pr.left < left) tb.scrollLeft -= left - pr.left;
+  if (pr.bottom > bottom) tb.scrollTop += pr.bottom - bottom;
+  else if (pr.top < top) tb.scrollTop -= top - pr.top;
 }
 
 function updatePlayerActionPanel() {
@@ -1819,6 +1974,7 @@ function updatePlayerActionPanel() {
       hint.textContent = '防守球员：可跑位或挡拆';
     }
   }
+  revealPlayerPanel();
 }
 
 function setPlayerHasBall() {
@@ -2202,6 +2358,10 @@ function onMouseDown(e) {
       const preset = ARROW_PRESETS[state.tool];
       if (preset.canCurve) {
         state.interaction.data.controlPoints.push(pt);
+        // A touch tap emits no move event, so the preview has to be re-anchored
+        // here or it keeps pointing at wherever the finger last dragged.
+        state.interaction.data.currentPt = pt;
+        renderAll();
       }
     }
   }
@@ -2582,9 +2742,10 @@ document.addEventListener('keydown', (e) => {
     deleteSelected();
   }
   if (e.code === 'Escape') {
-    state.interaction = { type: 'idle', data: {} };
     state.selectedArrowId = null;
     state.selectedPlayerId = null;
+    setTool('select');
+    updatePlayerActionPanel();
     renderAll();
   }
   if (e.ctrlKey && e.code === 'KeyZ') {
@@ -2629,6 +2790,100 @@ function deleteSelected() {
     renderAll();
     updateFrameList();
     showInfo('已删除球员');
+  }
+}
+
+// ============================================================
+// CONTEXT ACTION BAR
+// Touch devices have no right-click, Esc or Del, so every action that
+// desktop reaches through those gets a visible button here.
+// ============================================================
+let actionBarSig = '';
+
+function updateActionBar() {
+  const it = state.interaction.type;
+  const drawing = it === 'drawing';
+  const targeting = it === 'pass_targeting';
+  // A drawing tool can sit idle (e.g. the tap landed on a player and started a
+  // drag instead). Keep the bar up so touch users always have a way back.
+  const armed = !drawing && !targeting && state.tool !== 'select';
+  const cpCount = drawing ? (state.interaction.data.controlPoints || []).length : 0;
+  const selArrow = drawing || targeting || armed ? null : state.selectedArrowId;
+  const selPlayer = drawing || targeting || armed ? null : state.selectedPlayerId;
+  const sig = `${it}|${state.tool}|${cpCount}|${selArrow}|${selPlayer}`;
+  if (sig === actionBarSig) return;
+  actionBarSig = sig;
+
+  const selected = !!(selArrow || selPlayer);
+  const visible = drawing || targeting || armed || selected;
+  const bar = document.getElementById('action-bar');
+  const wasVisible = bar.classList.contains('show');
+
+  document.getElementById('act-finish').style.display = drawing ? '' : 'none';
+  document.getElementById('act-back').style.display = drawing ? '' : 'none';
+  document.getElementById('act-delete').style.display = selected ? '' : 'none';
+  document.getElementById('act-cancel').style.display = visible ? '' : 'none';
+  document.getElementById('act-finish').disabled = cpCount === 0;
+  document.getElementById('act-back').disabled = cpCount === 0;
+  document.getElementById('act-cancel').textContent = selected ? '✕ 取消选中' : '✕ 取消';
+
+  const hint = document.getElementById('action-hint');
+  if (drawing) {
+    hint.textContent = cpCount
+      ? `已点 ${cpCount} 个点：「完成」把最后一个点作为终点`
+      : '在球场上点一下终点位置，再点「完成」';
+  } else if (targeting) {
+    hint.textContent = '点击队友、篮筐或队友路线的终点完成传球';
+  } else if (armed) {
+    hint.textContent = `点击球场开始画「${ARROW_PRESETS[state.tool].label}」，或点「取消」回到选择`;
+  } else {
+    hint.textContent = selArrow ? '已选中路线：可改颜色、拖控制点，或删除' : '已选中球员：可拖动、持球或执行动作';
+  }
+
+  bar.classList.toggle('show', visible);
+  // The bar takes a layout row, so the court has to be re-fitted around it.
+  if (visible !== wasVisible) resizeCanvas();
+}
+
+function finishDrawingFromBar() {
+  if (state.interaction.type !== 'drawing') return;
+  const cps = state.interaction.data.controlPoints || [];
+  if (!cps.length) { showInfo('请先在球场上点一下终点位置'); return; }
+  // The last tap becomes the endpoint, exactly like a desktop right-click.
+  state.interaction.data.currentPt = cps.pop();
+  finishArrow();
+}
+
+function popControlPoint() {
+  if (state.interaction.type !== 'drawing') return;
+  const cps = state.interaction.data.controlPoints || [];
+  if (!cps.length) return;
+  cps.pop();
+  state.interaction.data.currentPt = cps.length ? cps[cps.length - 1] : state.interaction.data.startPt;
+  renderAll();
+}
+
+function cancelInteraction() {
+  const it = state.interaction.type;
+  if (it === 'drawing' || it === 'pass_targeting') {
+    setTool('select');
+    state.selectedPlayerId = null;
+    updatePlayerActionPanel();
+    renderAll();
+    showInfo(it === 'pass_targeting' ? '传球已取消' : '已取消绘制');
+    return;
+  }
+  if (state.tool !== 'select') {
+    setTool('select');
+    updatePlayerActionPanel();
+    renderAll();
+    return;
+  }
+  if (state.selectedArrowId || state.selectedPlayerId) {
+    state.selectedArrowId = null;
+    state.selectedPlayerId = null;
+    updatePlayerActionPanel();
+    renderAll();
   }
 }
 
@@ -2909,6 +3164,7 @@ function renderAll() {
   // Subtitle sits in screen space so it stays upright in both court modes
   drawCaption();
   drawTitle();
+  updateActionBar();
 }
 
 function drawBallAt(bx, by) {
