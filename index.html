@@ -139,6 +139,11 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .modal .form-row label { display: block; font-size: 12px; color: #7a8ba8; margin-bottom: 4px; }
 .modal .form-row input, .modal .form-row select { width: 100%; background: #1a1a2e; border: 1px solid #0f3460; color: #e0e0e0; padding: 6px 10px; border-radius: 6px; font-size: 13px; }
 .modal .form-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
+#library-list h3 { font-size: 13px; color: #e94560; margin: 14px 0 6px; }
+#library-list h3:first-child { margin-top: 0; }
+.library-item { display: block; width: 100%; text-align: left; background: #1a1a2e; border: 1px solid #0f3460; color: #e0e0e0; padding: 8px 10px; border-radius: 6px; font-size: 13px; margin-bottom: 6px; cursor: pointer; }
+.library-item:hover { border-color: #e94560; }
+.library-item .lib-meta { color: #7a8ba8; font-size: 11px; margin-left: 6px; }
 
 /* scrollbar */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
@@ -242,6 +247,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
     <button class="btn btn-secondary" onclick="saveProject()" title="保存工程文件（.json）" aria-label="保存">💾<span class="btn-label"> 保存</span></button>
     <button class="btn btn-secondary" onclick="document.getElementById('load-input').click()" title="加载工程文件（.json）" aria-label="加载">📂<span class="btn-label"> 加载</span></button>
     <input type="file" id="load-input" accept=".json" style="display:none" onchange="loadProject(event)">
+    <button class="btn btn-secondary" id="library-btn" onclick="openLibrary()" title="内置战术库：现成战术直接加载" aria-label="战术库" style="display:none">📚<span class="btn-label"> 战术库</span></button>
     <div class="dropdown">
       <button class="btn btn-primary" onclick="toggleExportMenu()" title="导出 PNG / GIF" aria-label="导出">📤<span class="btn-label"> 导出</span> ▾</button>
       <div class="dropdown-menu" id="export-menu">
@@ -417,8 +423,35 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
   </div>
 </div>
 
-<!-- GIF.js CDN -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.js"></script>
+<!-- Tactics library modal -->
+<div class="modal-overlay" id="library-modal">
+  <div class="modal">
+    <h2>📚 战术库</h2>
+    <p style="font-size:12px;color:#7a8ba8;margin-bottom:8px">点一个战术直接加载。加载会替换当前战术，请先 💾 保存自己的改动。</p>
+    <div id="library-list"></div>
+    <div class="form-actions">
+      <button class="btn btn-secondary" onclick="closeLibrary()">关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- GIF.js：本地优先（离线 exe / 本地双击可用），缺失时回退 CDN -->
+<script src="vendor/gif.js"></script>
+<script>
+if (typeof GIF === 'undefined') {
+  const s = document.createElement('script');
+  s.src = 'https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.js';
+  document.head.appendChild(s);
+}
+</script>
+
+<!-- 内置战术库（由 tools/build-tactics-library.mjs 生成）；文件缺失时按钮保持隐藏 -->
+<script src="tactics-library.js"></script>
+<script>
+if (typeof TACTICS_LIBRARY !== 'undefined') {
+  document.getElementById('library-btn').style.display = '';
+}
+</script>
 
 <script>
 // ============================================================
@@ -1629,17 +1662,44 @@ function startProgressDrag(e) {
 // ============================================================
 function exportCurrentPNG() {
   renderAll();
-  const link = document.createElement('a');
-  link.download = `${fileNameBase()}_帧${state.currentFrameIdx + 1}.png`;
-  link.href = canvas.toDataURL('image/png');
-  link.click();
-  showInfo('已导出当前帧 PNG');
+  const filename = `${fileNameBase()}_帧${state.currentFrameIdx + 1}.png`;
   closeExportMenu();
+  canvas.toBlob(blob => {
+    saveBlobAs(blob, filename, ['png'])
+      .then(ok => { if (ok) showInfo('已导出当前帧 PNG'); })
+      .catch(e => { showInfo('导出失败：' + e); console.error(e); });
+  }, 'image/png');
 }
 
-function exportAllPNG() {
+async function exportAllPNG() {
+  closeExportMenu();
   const savedIdx = state.currentFrameIdx;
-  state.tactic.frames.forEach((frame, idx) => {
+  const frames = state.tactic.frames;
+  if (inTauri()) {
+    const dir = await window.__TAURI__.dialog.open({ directory: true, title: '选择全部帧 PNG 的导出文件夹' });
+    if (!dir) return;
+    try {
+      for (let idx = 0; idx < frames.length; idx++) {
+        state.currentFrameIdx = idx;
+        renderAll();
+        const blob = await new Promise(res => canvas.toBlob(res, 'image/png'));
+        const bytes = new Uint8Array(await blob.arrayBuffer());
+        const sep = /[\\/]$/.test(dir) ? '' : '\\';
+        await window.__TAURI__.core.invoke('save_file', {
+          path: `${dir}${sep}${fileNameBase()}_帧${idx + 1}.png`,
+          data: Array.from(bytes),
+        });
+      }
+      showInfo(`已导出 ${frames.length} 帧 PNG`);
+    } catch (e) {
+      showInfo('导出失败：' + e);
+      console.error(e);
+    }
+    state.currentFrameIdx = savedIdx;
+    renderAll();
+    return;
+  }
+  frames.forEach((frame, idx) => {
     state.currentFrameIdx = idx;
     renderAll();
     const link = document.createElement('a');
@@ -1649,27 +1709,32 @@ function exportAllPNG() {
   });
   state.currentFrameIdx = savedIdx;
   renderAll();
-  showInfo(`已导出 ${state.tactic.frames.length} 帧 PNG`);
-  closeExportMenu();
+  showInfo(`已导出 ${frames.length} 帧 PNG`);
 }
 
-const GIF_WORKER_SRC = 'https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.worker.js';
+const GIF_WORKER_LOCAL = 'vendor/gif.worker.js';
+const GIF_WORKER_CDN = 'https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.worker.js';
 let gifWorkerUrl = null;
 
 // A cross-origin workerScript is rejected when the page is opened straight from
 // the filesystem, and gif.js swallows the failure, leaving render() hanging.
-// Reloading the script through a same-origin blob URL avoids that.
+// Reloading the script through a same-origin blob URL avoids that. Local copy
+// first so the packaged exe works offline; file:// pages can't fetch local
+// files, so they fall through to the CDN exactly as before.
 async function getGifWorkerUrl() {
   if (gifWorkerUrl) return gifWorkerUrl;
-  try {
-    const res = await fetch(GIF_WORKER_SRC);
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    const text = await res.text();
-    gifWorkerUrl = URL.createObjectURL(new Blob([text], { type: 'application/javascript' }));
-  } catch (e) {
-    console.warn('gif worker fetch failed, using CDN url', e);
-    gifWorkerUrl = GIF_WORKER_SRC;
+  for (const src of [GIF_WORKER_LOCAL, GIF_WORKER_CDN]) {
+    try {
+      const res = await fetch(src);
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const text = await res.text();
+      gifWorkerUrl = URL.createObjectURL(new Blob([text], { type: 'application/javascript' }));
+      return gifWorkerUrl;
+    } catch (e) {
+      console.warn('gif worker fetch failed: ' + src, e);
+    }
   }
+  gifWorkerUrl = GIF_WORKER_CDN;
   return gifWorkerUrl;
 }
 
@@ -1774,18 +1839,13 @@ async function exportGIF() {
     done = true;
     clearTimeout(watchdog);
     const secs = ((performance.now() - startedAt) / 1000).toFixed(1);
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.download = `${fileNameBase()}.gif`;
-    link.href = url;
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    // Revoking synchronously can abort the download before the browser starts it.
-    setTimeout(() => URL.revokeObjectURL(url), 30000);
     state.currentFrameIdx = savedIdx;
     renderAll();
-    showInfo(`GIF 导出完成！${totalFrames} 帧 · ${secs}s · ${(blob.size / 1048576).toFixed(1)} MB`);
+    saveBlobAs(blob, `${fileNameBase()}.gif`, ['gif'])
+      .then(ok => {
+        if (ok) showInfo(`GIF 导出完成！${totalFrames} 帧 · ${secs}s · ${(blob.size / 1048576).toFixed(1)} MB`);
+      })
+      .catch(e => { showInfo('GIF 保存失败：' + e); console.error(e); });
   });
 
   gif.render();
@@ -1798,21 +1858,69 @@ function fileNameBase() {
   return (state.tactic.name || '').trim().replace(/[\\/:*?"<>|]/g, '_') || 'basketball_tactic';
 }
 
-function saveProject() {
-  const data = JSON.stringify(state.tactic, null, 2);
-  const blob = new Blob([data], { type: 'application/json' });
-  const link = document.createElement('a');
-  link.download = `${fileNameBase()}.json`;
+// In the packaged exe, files land through the native save-as dialog; the web
+// version keeps the original browser-download behavior.
+function inTauri() { return !!(window.__TAURI__ && window.__TAURI__.dialog); }
+
+function downloadBlob(blob, filename) {
   const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.download = filename;
   link.href = url;
   document.body.appendChild(link);
   link.click();
   link.remove();
+  // Revoking synchronously can abort the download before the browser starts it.
   setTimeout(() => URL.revokeObjectURL(url), 30000);
+}
+
+// Resolves false when the user cancels the native dialog.
+async function saveBlobAs(blob, filename, extensions) {
+  if (!inTauri()) { downloadBlob(blob, filename); return true; }
+  const path = await window.__TAURI__.dialog.save({
+    defaultPath: filename,
+    filters: [{ name: extensions[0].toUpperCase(), extensions }],
+  });
+  if (!path) return false;
+  const bytes = new Uint8Array(await blob.arrayBuffer());
+  await window.__TAURI__.core.invoke('save_file', { path, data: Array.from(bytes) });
+  return true;
+}
+
+async function saveProject() {
+  const data = JSON.stringify(state.tactic, null, 2);
+  const blob = new Blob([data], { type: 'application/json' });
+  let ok;
+  try {
+    ok = await saveBlobAs(blob, `${fileNameBase()}.json`, ['json']);
+  } catch (e) {
+    showInfo('保存失败：' + e);
+    console.error(e);
+    return;
+  }
+  if (!ok) return;
   showInfo('项目已保存');
 
   // Also save to localStorage
   localStorage.setItem('basketball_tactic_' + (state.tactic.name || 'default'), data);
+}
+
+function applyProjectData(data) {
+  state.tactic = data;
+  state.currentFrameIdx = 0;
+  state.selectedArrowId = null;
+  state.selectedPlayerId = null;
+  state.interaction = { type: 'idle', data: {} };
+
+  // Update UI
+  syncNameUI();
+  document.getElementById('offense-count').value = data.frames[0]?.players.filter(p => p.team === 'offense').length || 5;
+  document.getElementById('defense-count').value = data.frames[0]?.players.filter(p => p.team === 'defense').length || 5;
+
+  if (data.courtType) setCourtType(data.courtType);
+
+  renderAll();
+  updateFrameList();
 }
 
 function loadProject(event) {
@@ -1821,22 +1929,7 @@ function loadProject(event) {
   const reader = new FileReader();
   reader.onload = (e) => {
     try {
-      const data = JSON.parse(e.target.result);
-      state.tactic = data;
-      state.currentFrameIdx = 0;
-      state.selectedArrowId = null;
-      state.selectedPlayerId = null;
-      state.interaction = { type: 'idle', data: {} };
-
-      // Update UI
-      syncNameUI();
-      document.getElementById('offense-count').value = data.frames[0]?.players.filter(p => p.team === 'offense').length || 5;
-      document.getElementById('defense-count').value = data.frames[0]?.players.filter(p => p.team === 'defense').length || 5;
-
-      if (data.courtType) setCourtType(data.courtType);
-
-      renderAll();
-      updateFrameList();
+      applyProjectData(JSON.parse(e.target.result));
       showInfo('项目已加载');
     } catch (err) {
       showInfo('加载失败：文件格式错误');
@@ -2917,6 +3010,48 @@ document.addEventListener('click', (e) => {
 
 function toggleSettings() {
   document.getElementById('settings-modal').classList.toggle('show');
+}
+
+function openLibrary() {
+  const list = document.getElementById('library-list');
+  list.innerHTML = '';
+  let lastHeading = '';
+  TACTICS_LIBRARY.forEach(t => {
+    const heading = `${t.group} · ${t.category}`;
+    if (heading !== lastHeading) {
+      const h = document.createElement('h3');
+      h.textContent = heading;
+      list.appendChild(h);
+      lastHeading = heading;
+    }
+    const btn = document.createElement('button');
+    btn.className = 'library-item';
+    btn.textContent = t.name;
+    const meta = document.createElement('span');
+    meta.className = 'lib-meta';
+    meta.textContent = `${t.frames} 帧`;
+    btn.appendChild(meta);
+    btn.onclick = () => loadLibraryTactic(t);
+    list.appendChild(btn);
+  });
+  document.getElementById('library-modal').classList.add('show');
+}
+
+function closeLibrary() {
+  document.getElementById('library-modal').classList.remove('show');
+}
+
+function loadLibraryTactic(t) {
+  if (!confirm(`加载「${t.name}」会替换当前战术，未保存的改动会丢失。继续？`)) return;
+  try {
+    // Deep copy so editing the loaded tactic never mutates the library data.
+    applyProjectData(JSON.parse(JSON.stringify(t.data)));
+    closeLibrary();
+    showInfo(`已加载「${t.name}」`);
+  } catch (e) {
+    showInfo('加载失败：战术数据错误');
+    console.error(e);
+  }
 }
 
 function applySettings() {
