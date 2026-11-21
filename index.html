@@ -247,7 +247,8 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
     <button class="btn btn-secondary" onclick="saveProject()" title="保存工程文件（.json）" aria-label="保存">💾<span class="btn-label"> 保存</span></button>
     <button class="btn btn-secondary" onclick="document.getElementById('load-input').click()" title="加载工程文件（.json）" aria-label="加载">📂<span class="btn-label"> 加载</span></button>
     <input type="file" id="load-input" accept=".json" style="display:none" onchange="loadProject(event)">
-    <button class="btn btn-secondary" id="library-btn" onclick="openLibrary()" title="内置战术库：现成战术直接加载" aria-label="战术库" style="display:none">📚<span class="btn-label"> 战术库</span></button>
+    <button class="btn btn-secondary" id="library-btn" onclick="openLibrary()" title="战术库：现成战术直接加载（网页版自动读取 GitHub 最新库）" aria-label="战术库" style="display:none">📚<span class="btn-label"> 战术库</span></button>
+    <button class="btn btn-secondary" id="upload-btn" onclick="openUpload()" title="管理员：把当前战术上传到在线战术库" aria-label="更新战术库" style="display:none">⬆️<span class="btn-label"> 更新库</span></button>
     <div class="dropdown">
       <button class="btn btn-primary" onclick="toggleExportMenu()" title="导出 PNG / GIF" aria-label="导出">📤<span class="btn-label"> 导出</span> ▾</button>
       <div class="dropdown-menu" id="export-menu">
@@ -428,9 +429,45 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
   <div class="modal">
     <h2>📚 战术库</h2>
     <p style="font-size:12px;color:#7a8ba8;margin-bottom:8px">点一个战术直接加载。加载会替换当前战术，请先 💾 保存自己的改动。</p>
+    <p id="library-status" style="font-size:11px;color:#7a8ba8;margin-bottom:8px"></p>
     <div id="library-list"></div>
     <div class="form-actions">
+      <button class="btn btn-secondary" id="library-upload-btn" onclick="closeLibrary();openUpload()" style="display:none">⬆️ 上传当前战术</button>
       <button class="btn btn-secondary" onclick="closeLibrary()">关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- Admin upload modal (web only) -->
+<div class="modal-overlay" id="upload-modal">
+  <div class="modal">
+    <h2>⬆️ 上传战术到在线战术库</h2>
+    <div class="form-row">
+      <label>战术名称（也是文件名）</label>
+      <input id="upload-name" maxlength="40" spellcheck="false" placeholder="例：西班牙挡拆">
+    </div>
+    <div class="form-row">
+      <label>组</label>
+      <select id="upload-group" onchange="onUploadPick('group')"></select>
+      <input id="upload-group-new" maxlength="20" spellcheck="false" placeholder="新组名称" style="display:none;margin-top:6px">
+    </div>
+    <div class="form-row">
+      <label>分类</label>
+      <select id="upload-category" onchange="onUploadPick('category')"></select>
+      <input id="upload-category-new" maxlength="20" spellcheck="false" placeholder="新分类名称" style="display:none;margin-top:6px">
+    </div>
+    <div class="form-row">
+      <label>管理员令牌（GitHub 细粒度令牌）</label>
+      <input id="upload-token" type="password" spellcheck="false" autocomplete="off" placeholder="github_pat_… 或 fine-grained token">
+      <details style="font-size:11px;color:#7a8ba8;margin-top:6px">
+        <summary style="cursor:pointer">如何获取令牌？</summary>
+        <p style="margin-top:4px;line-height:1.6">GitHub → Settings → Developer settings → Fine-grained tokens → Generate new token：Repository access 只选 basketball-tactics-board 这一个仓库，Permissions → Repository permissions → Contents 设为 Read and write。令牌只保存在你自己浏览器的 localStorage 里，不会写进网页代码；没有令牌的人只能看库、不能上传。</p>
+      </details>
+    </div>
+    <p id="upload-status" style="font-size:12px;color:#7a8ba8;min-height:18px;margin-top:4px"></p>
+    <div class="form-actions">
+      <button class="btn btn-secondary" onclick="closeUpload()">取消</button>
+      <button class="btn btn-primary" id="upload-submit" onclick="doUpload()">上传</button>
     </div>
   </div>
 </div>
@@ -445,12 +482,19 @@ if (typeof GIF === 'undefined') {
 }
 </script>
 
-<!-- 内置战术库（由 tools/build-tactics-library.mjs 生成）；文件缺失时按钮保持隐藏 -->
+<!-- 内置战术库（由 tools/build-tactics-library.mjs 生成）作为离线回退；网页版优先在线读取 GitHub -->
 <script src="tactics-library.js"></script>
 <script>
-if (typeof TACTICS_LIBRARY !== 'undefined') {
-  document.getElementById('library-btn').style.display = '';
-}
+(function () {
+  const isExe = !!(window.__TAURI__ && window.__TAURI__.dialog);
+  if (typeof TACTICS_LIBRARY !== 'undefined' || !isExe) {
+    document.getElementById('library-btn').style.display = '';
+  }
+  if (!isExe) {
+    document.getElementById('upload-btn').style.display = '';
+    document.getElementById('library-upload-btn').style.display = '';
+  }
+})();
 </script>
 
 <script>
@@ -3012,11 +3056,73 @@ function toggleSettings() {
   document.getElementById('settings-modal').classList.toggle('show');
 }
 
-function openLibrary() {
+// ---- Tactics library: online-first on the web, embedded fallback everywhere ----
+const LIB_REPO = 'AlexanderWolf137/basketball-tactics-board';
+const LIB_BRANCH = 'main';
+const LIB_ROOT = '战术库';
+const LIB_TOKEN_KEY = 'tactics_admin_token';
+let libEntries = [];
+let libSource = 'embedded';
+let libLoadSeq = 0;
+
+function embeddedLibrary() {
+  return (typeof TACTICS_LIBRARY !== 'undefined' ? TACTICS_LIBRARY : []).map(t => ({
+    group: t.group, category: t.category, name: t.name, frames: t.frames, data: t.data,
+  }));
+}
+
+// Reads the manifest via raw.githubusercontent.com (CDN, no API rate limit);
+// the anonymous REST API is capped at 60 req/h per IP and often exhausted on
+// shared/campus networks.
+async function fetchLibraryIndex() {
+  const res = await fetch(rawLibraryUrl(LIB_ROOT + '/index.json'));
+  if (!res.ok) throw new Error('HTTP ' + res.status);
+  const json = await res.json();
+  const entries = (json.tactics || []).filter(t => t && t.group && t.category && t.name && t.path);
+  entries.sort((a, b) => (a.group + '/' + a.category + '/' + a.name).localeCompare(b.group + '/' + b.category + '/' + b.name, 'zh'));
+  return entries;
+}
+
+function rawLibraryUrl(path) {
+  return `https://raw.githubusercontent.com/${LIB_REPO}/${LIB_BRANCH}/` + path.split('/').map(encodeURIComponent).join('/');
+}
+
+async function openLibrary() {
+  document.getElementById('library-modal').classList.add('show');
+  const status = document.getElementById('library-status');
+  const list = document.getElementById('library-list');
+  if (inTauri()) {
+    libEntries = embeddedLibrary();
+    libSource = 'embedded';
+    renderLibrary();
+    return;
+  }
+  const seq = ++libLoadSeq;
+  list.innerHTML = '';
+  status.textContent = '正在从 GitHub 读取最新战术库…';
+  try {
+    const entries = await fetchLibraryIndex();
+    if (seq !== libLoadSeq) return;
+    libEntries = entries;
+    libSource = 'online';
+  } catch (e) {
+    if (seq !== libLoadSeq) return;
+    console.warn('在线战术库读取失败，回退内置库:', e);
+    libEntries = embeddedLibrary();
+    libSource = 'embedded';
+  }
+  renderLibrary();
+}
+
+function renderLibrary() {
+  const status = document.getElementById('library-status');
   const list = document.getElementById('library-list');
   list.innerHTML = '';
+  status.textContent = libSource === 'online'
+    ? `来源：GitHub 在线库（最新）· 共 ${libEntries.length} 个战术`
+    : `在线读取失败，显示内置离线库 · 共 ${libEntries.length} 个战术`;
   let lastHeading = '';
-  TACTICS_LIBRARY.forEach(t => {
+  libEntries.forEach(t => {
     const heading = `${t.group} · ${t.category}`;
     if (heading !== lastHeading) {
       const h = document.createElement('h3');
@@ -3027,30 +3133,205 @@ function openLibrary() {
     const btn = document.createElement('button');
     btn.className = 'library-item';
     btn.textContent = t.name;
-    const meta = document.createElement('span');
-    meta.className = 'lib-meta';
-    meta.textContent = `${t.frames} 帧`;
-    btn.appendChild(meta);
+    if (t.frames) {
+      const meta = document.createElement('span');
+      meta.className = 'lib-meta';
+      meta.textContent = `${t.frames} 帧`;
+      btn.appendChild(meta);
+    }
     btn.onclick = () => loadLibraryTactic(t);
     list.appendChild(btn);
   });
-  document.getElementById('library-modal').classList.add('show');
 }
 
 function closeLibrary() {
   document.getElementById('library-modal').classList.remove('show');
 }
 
-function loadLibraryTactic(t) {
+async function loadLibraryTactic(t) {
   if (!confirm(`加载「${t.name}」会替换当前战术，未保存的改动会丢失。继续？`)) return;
   try {
+    let data = t.data;
+    if (!data) {
+      const res = await fetch(rawLibraryUrl(t.path));
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      data = await res.json();
+    }
     // Deep copy so editing the loaded tactic never mutates the library data.
-    applyProjectData(JSON.parse(JSON.stringify(t.data)));
+    applyProjectData(JSON.parse(JSON.stringify(data)));
     closeLibrary();
     showInfo(`已加载「${t.name}」`);
   } catch (e) {
-    showInfo('加载失败：战术数据错误');
+    showInfo('加载失败：' + (e && e.message ? e.message : '战术数据错误'));
     console.error(e);
+  }
+}
+
+// ---- Admin upload: commit the current tactic into 战术库/ via GitHub API ----
+function sanitizeLibName(s) {
+  return (s || '').trim().replace(/[\\/:*?"<>|]/g, '_').replace(/^\.+|\.+$/g, '').trim();
+}
+
+function fillUploadSelect(id, values) {
+  const sel = document.getElementById(id);
+  sel.innerHTML = '';
+  values.forEach(v => {
+    const o = document.createElement('option');
+    o.value = v; o.textContent = v;
+    sel.appendChild(o);
+  });
+  const o = document.createElement('option');
+  o.value = '__new__'; o.textContent = '＋ 新建…';
+  sel.appendChild(o);
+}
+
+function onUploadPick(kind) {
+  const sel = document.getElementById('upload-' + kind);
+  document.getElementById('upload-' + kind + '-new').style.display = sel.value === '__new__' ? '' : 'none';
+}
+
+async function openUpload() {
+  if (inTauri()) return;
+  document.getElementById('upload-name').value = state.tactic.name || '';
+  document.getElementById('upload-token').value = localStorage.getItem(LIB_TOKEN_KEY) || '';
+  setUploadStatus('');
+  document.getElementById('upload-submit').disabled = false;
+  let entries;
+  try {
+    entries = await fetchLibraryIndex();
+    libEntries = entries;
+    libSource = 'online';
+  } catch (e) {
+    entries = embeddedLibrary();
+  }
+  const groups = [...new Set(entries.map(t => t.group))];
+  const categories = [...new Set(entries.map(t => t.category))];
+  fillUploadSelect('upload-group', groups.length ? groups : ['男篮', '女篮']);
+  fillUploadSelect('upload-category', categories.length ? categories : ['32联防or盯人', '23联防', '底线球', '边线球']);
+  document.getElementById('upload-group-new').style.display = 'none';
+  document.getElementById('upload-category-new').style.display = 'none';
+  document.getElementById('upload-modal').classList.add('show');
+}
+
+function closeUpload() {
+  document.getElementById('upload-modal').classList.remove('show');
+}
+
+function setUploadStatus(msg, color) {
+  const el = document.getElementById('upload-status');
+  el.textContent = msg;
+  el.style.color = color || '#7a8ba8';
+}
+
+function utf8ToBase64(str) {
+  const bytes = new TextEncoder().encode(str);
+  let bin = '';
+  for (let i = 0; i < bytes.length; i += 8192) {
+    bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 8192));
+  }
+  return btoa(bin);
+}
+
+function base64ToUtf8(b64) {
+  const bin = atob(b64.replace(/\s/g, ''));
+  const bytes = Uint8Array.from(bin, c => c.charCodeAt(0));
+  return new TextDecoder().decode(bytes);
+}
+
+// Keeps 战术库/index.json in sync so readers never need the rate-limited API.
+async function updateLibraryIndex(headers, entry) {
+  const url = `https://api.github.com/repos/${LIB_REPO}/contents/${encodeURIComponent(LIB_ROOT)}/index.json`;
+  const get = await fetch(url + '?ref=' + LIB_BRANCH, { headers });
+  let manifest = { tactics: [] };
+  let sha;
+  if (get.status === 200) {
+    const json = await get.json();
+    sha = json.sha;
+    manifest = JSON.parse(base64ToUtf8(json.content));
+  } else if (get.status !== 404) {
+    throw new Error('读取目录失败 HTTP ' + get.status);
+  }
+  manifest.tactics = (manifest.tactics || []).filter(t => t.path !== entry.path);
+  manifest.tactics.push(entry);
+  const body = {
+    message: `战术库：更新目录 ${entry.group}/${entry.category}/${entry.name}`,
+    content: utf8ToBase64(JSON.stringify(manifest, null, 2) + '\n'),
+    branch: LIB_BRANCH,
+  };
+  if (sha) body.sha = sha;
+  const put = await fetch(url, { method: 'PUT', headers, body: JSON.stringify(body) });
+  if (!put.ok) {
+    const err = await put.json().catch(() => ({}));
+    throw new Error(err.message || 'HTTP ' + put.status);
+  }
+}
+
+async function doUpload() {
+  const name = sanitizeLibName(document.getElementById('upload-name').value);
+  const groupSel = document.getElementById('upload-group').value;
+  const catSel = document.getElementById('upload-category').value;
+  const group = sanitizeLibName(groupSel === '__new__' ? document.getElementById('upload-group-new').value : groupSel);
+  const category = sanitizeLibName(catSel === '__new__' ? document.getElementById('upload-category-new').value : catSel);
+  const token = document.getElementById('upload-token').value.trim();
+  if (!name) { setUploadStatus('请填写战术名称', '#e94560'); return; }
+  if (!group || !category) { setUploadStatus('请选择或填写组和分类', '#e94560'); return; }
+  if (!token) { setUploadStatus('请填写管理员令牌（获取方法见上方说明）', '#e94560'); return; }
+
+  const submit = document.getElementById('upload-submit');
+  submit.disabled = true;
+  setUploadStatus('正在上传…');
+  const apiPath = [LIB_ROOT, group, category, name + '.json'].map(encodeURIComponent).join('/');
+  const apiUrl = `https://api.github.com/repos/${LIB_REPO}/contents/${apiPath}`;
+  const headers = { Authorization: 'Bearer ' + token, Accept: 'application/vnd.github+json' };
+  try {
+    // Look up first: distinguishes create vs overwrite and validates the token early.
+    const head = await fetch(apiUrl + '?ref=' + LIB_BRANCH, { headers });
+    let sha;
+    if (head.status === 200) {
+      sha = (await head.json()).sha;
+      if (!confirm(`库里已有同名战术「${group} / ${category} / ${name}」，覆盖它？`)) {
+        setUploadStatus('已取消覆盖');
+        submit.disabled = false;
+        return;
+      }
+    } else if (head.status !== 404) {
+      throw new Error(head.status === 401 ? '令牌无效或已过期'
+        : head.status === 403 ? '令牌没有该仓库的写权限（需要 Contents: Read and write）'
+        : 'GitHub 返回 HTTP ' + head.status);
+    }
+    const payload = JSON.parse(JSON.stringify(state.tactic));
+    payload.name = name;
+    const body = {
+      message: `战术库：更新 ${group}/${category}/${name}`,
+      content: utf8ToBase64(JSON.stringify(payload, null, 2)),
+      branch: LIB_BRANCH,
+    };
+    if (sha) body.sha = sha;
+    const put = await fetch(apiUrl, { method: 'PUT', headers, body: JSON.stringify(body) });
+    if (!put.ok) {
+      const err = await put.json().catch(() => ({}));
+      throw new Error(err.message || 'GitHub 返回 HTTP ' + put.status);
+    }
+    try {
+      await updateLibraryIndex(headers, {
+        group, category, name,
+        frames: Array.isArray(payload.frames) ? payload.frames.length : 0,
+        path: [LIB_ROOT, group, category, name + '.json'].join('/'),
+      });
+    } catch (e) {
+      setUploadStatus('战术已上传，但目录更新失败：' + e.message + '。再点一次上传即可修复。', '#e94560');
+      console.error(e);
+      return;
+    }
+    localStorage.setItem(LIB_TOKEN_KEY, token);
+    setUploadStatus('✅ 上传成功！几分钟后所有网页用户可见。', '#4caf50');
+    showInfo('战术已上传到在线战术库');
+    fetchLibraryIndex().then(entries => { libEntries = entries; libSource = 'online'; }).catch(() => {});
+  } catch (e) {
+    setUploadStatus('上传失败：' + (e && e.message ? e.message : '网络错误，无法连接 GitHub'), '#e94560');
+    console.error(e);
+  } finally {
+    submit.disabled = false;
   }
 }
 

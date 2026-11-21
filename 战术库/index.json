@@ -1,0 +1,116 @@
+{
+  "tactics": [
+    {
+      "group": "女篮",
+      "category": "23联防",
+      "name": "1号战术",
+      "frames": 3,
+      "path": "战术库/女篮/23联防/1号战术.json"
+    },
+    {
+      "group": "女篮",
+      "category": "23联防",
+      "name": "2号战术",
+      "frames": 4,
+      "path": "战术库/女篮/23联防/2号战术.json"
+    },
+    {
+      "group": "女篮",
+      "category": "23联防",
+      "name": "7号战术",
+      "frames": 3,
+      "path": "战术库/女篮/23联防/7号战术.json"
+    },
+    {
+      "group": "女篮",
+      "category": "32联防or盯人",
+      "name": "1号战术",
+      "frames": 5,
+      "path": "战术库/女篮/32联防or盯人/1号战术.json"
+    },
+    {
+      "group": "女篮",
+      "category": "32联防or盯人",
+      "name": "6号战术",
+      "frames": 7,
+      "path": "战术库/女篮/32联防or盯人/6号战术.json"
+    },
+    {
+      "group": "女篮",
+      "category": "32联防or盯人",
+      "name": "9号战术",
+      "frames": 6,
+      "path": "战术库/女篮/32联防or盯人/9号战术.json"
+    },
+    {
+      "group": "男篮",
+      "category": "23联防",
+      "name": "2号战术",
+      "frames": 4,
+      "path": "战术库/男篮/23联防/2号战术.json"
+    },
+    {
+      "group": "男篮",
+      "category": "32联防or盯人",
+      "name": "6号战术",
+      "frames": 7,
+      "path": "战术库/男篮/32联防or盯人/6号战术.json"
+    },
+    {
+      "group": "男篮",
+      "category": "32联防or盯人",
+      "name": "8号战术",
+      "frames": 4,
+      "path": "战术库/男篮/32联防or盯人/8号战术.json"
+    },
+    {
+      "group": "男篮",
+      "category": "32联防or盯人",
+      "name": "UCLA cut",
+      "frames": 3,
+      "path": "战术库/男篮/32联防or盯人/UCLA cut.json"
+    },
+    {
+      "group": "男篮",
+      "category": "32联防or盯人",
+      "name": "牛角",
+      "frames": 5,
+      "path": "战术库/男篮/32联防or盯人/牛角.json"
+    },
+    {
+      "group": "男篮",
+      "category": "32联防or盯人",
+      "name": "西班牙挡拆",
+      "frames": 6,
+      "path": "战术库/男篮/32联防or盯人/西班牙挡拆.json"
+    },
+    {
+      "group": "男篮",
+      "category": "32联防or盯人",
+      "name": "连续掩护",
+      "frames": 8,
+      "path": "战术库/男篮/32联防or盯人/连续掩护.json"
+    },
+    {
+      "group": "男篮",
+      "category": "底线球",
+      "name": "切",
+      "frames": 3,
+      "path": "战术库/男篮/底线球/切.json"
+    },
+    {
+      "group": "男篮",
+      "category": "底线球",
+      "name": "弹",
+      "frames": 3,
+      "path": "战术库/男篮/底线球/弹.json"
+    },
+    {
+      "group": "男篮",
+      "category": "底线球",
+      "name": "角",
+      "frames": 3,
+      "path": "战术库/男篮/底线球/角.json"
+    }
+  ]
+}
