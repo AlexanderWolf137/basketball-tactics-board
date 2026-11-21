@@ -3084,7 +3084,9 @@ async function fetchLibraryIndex() {
 }
 
 function rawLibraryUrl(path) {
-  return `https://raw.githubusercontent.com/${LIB_REPO}/${LIB_BRANCH}/` + path.split('/').map(encodeURIComponent).join('/');
+  // Cache-buster: the raw CDN caches 404s and stale content for minutes, which
+  // would hide freshly uploaded tactics (or the manifest itself on first push).
+  return `https://raw.githubusercontent.com/${LIB_REPO}/${LIB_BRANCH}/` + path.split('/').map(encodeURIComponent).join('/') + '?t=' + Date.now();
 }
 
 async function openLibrary() {
@@ -3324,7 +3326,7 @@ async function doUpload() {
       return;
     }
     localStorage.setItem(LIB_TOKEN_KEY, token);
-    setUploadStatus('✅ 上传成功！几分钟后所有网页用户可见。', '#4caf50');
+    setUploadStatus('✅ 上传成功！其他网页用户刷新页面后即可看到。', '#4caf50');
     showInfo('战术已上传到在线战术库');
     fetchLibraryIndex().then(entries => { libEntries = entries; libSource = 'online'; }).catch(() => {});
   } catch (e) {
