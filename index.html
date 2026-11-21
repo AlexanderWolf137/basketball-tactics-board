@@ -3074,11 +3074,11 @@ function embeddedLibrary() {
   }));
 }
 
-// Reads the manifest via raw.githubusercontent.com (CDN, no API rate limit);
-// the anonymous REST API is capped at 60 req/h per IP and often exhausted on
-// shared/campus networks.
+// Reads the manifest from GitHub Pages (no API rate limit, cache purged on
+// deploy); the anonymous REST API is capped at 60 req/h per IP and often
+// exhausted on shared/campus networks.
 async function fetchLibraryIndex() {
-  const res = await fetch(rawLibraryUrl(LIB_ROOT + '/index.json'));
+  const res = await fetch(libraryFileUrl(LIB_ROOT + '/index.json'));
   if (!res.ok) throw new Error('HTTP ' + res.status);
   const json = await res.json();
   const entries = (json.tactics || []).filter(t => t && t.group && t.category && t.name && t.path);
@@ -3086,10 +3086,12 @@ async function fetchLibraryIndex() {
   return entries;
 }
 
-function rawLibraryUrl(path) {
-  // Cache-buster: the raw CDN caches 404s and stale content for minutes, which
-  // would hide freshly uploaded tactics (or the manifest itself on first push).
-  return `https://raw.githubusercontent.com/${LIB_REPO}/${LIB_BRANCH}/` + path.split('/').map(encodeURIComponent).join('/') + '?t=' + Date.now();
+// Library files are read from GitHub Pages: every deploy purges its CDN cache,
+// so reads are fresh ~1 min after an upload. raw.githubusercontent.com keeps
+// stale copies for minutes and ignores cache-busting queries. The ?t= param
+// bypasses the *browser* HTTP cache (Pages sends max-age=600).
+function libraryFileUrl(path) {
+  return 'https://alexanderwolf137.github.io/basketball-tactics-board/' + path.split('/').map(encodeURIComponent).join('/') + '?t=' + Date.now();
 }
 
 async function openLibrary() {
@@ -3171,7 +3173,7 @@ async function loadLibraryTactic(t) {
   try {
     let data = t.data;
     if (!data) {
-      const res = await fetch(rawLibraryUrl(t.path));
+      const res = await fetch(libraryFileUrl(t.path));
       if (!res.ok) throw new Error('HTTP ' + res.status);
       data = await res.json();
     }
@@ -3382,7 +3384,7 @@ async function doUpload() {
       return;
     }
     localStorage.setItem(LIB_TOKEN_KEY, token);
-    setUploadStatus('✅ 上传成功！其他网页用户刷新页面后即可看到。', '#4caf50');
+    setUploadStatus('✅ 上传成功！约 1 分钟后（网站部署完成）所有用户可见。', '#4caf50');
     showInfo('战术已上传到在线战术库');
     fetchLibraryIndex().then(entries => { libEntries = entries; libSource = 'online'; }).catch(() => {});
   } catch (e) {
