@@ -141,8 +141,11 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .modal .form-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
 #library-list h3 { font-size: 13px; color: #e94560; margin: 14px 0 6px; }
 #library-list h3:first-child { margin-top: 0; }
-.library-item { display: block; width: 100%; text-align: left; background: #1a1a2e; border: 1px solid #0f3460; color: #e0e0e0; padding: 8px 10px; border-radius: 6px; font-size: 13px; margin-bottom: 6px; cursor: pointer; }
+.library-item { display: flex; align-items: center; width: 100%; background: #1a1a2e; border: 1px solid #0f3460; border-radius: 6px; margin-bottom: 6px; }
 .library-item:hover { border-color: #e94560; }
+.library-load { flex: 1; text-align: left; background: none; border: none; color: #e0e0e0; padding: 8px 10px; font-size: 13px; cursor: pointer; }
+.library-del { background: none; border: none; color: #7a8ba8; padding: 8px 10px; font-size: 13px; cursor: pointer; }
+.library-del:hover { color: #e94560; }
 .library-item .lib-meta { color: #7a8ba8; font-size: 11px; margin-left: 6px; }
 
 /* scrollbar */
@@ -461,7 +464,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
       <input id="upload-token" type="password" spellcheck="false" autocomplete="off" placeholder="github_pat_… 或 fine-grained token">
       <details style="font-size:11px;color:#7a8ba8;margin-top:6px">
         <summary style="cursor:pointer">如何获取令牌？</summary>
-        <p style="margin-top:4px;line-height:1.6">GitHub → Settings → Developer settings → Fine-grained tokens → Generate new token：Repository access 只选 basketball-tactics-board 这一个仓库，Permissions → Repository permissions → Contents 设为 Read and write。令牌只保存在你自己浏览器的 localStorage 里，不会写进网页代码；没有令牌的人只能看库、不能上传。</p>
+        <p style="margin-top:4px;line-height:1.6">请联系教练组/队长获取。令牌只保存在你自己浏览器里，不会写进网页代码；没有令牌的人只能看库，不能上传或删除。</p>
       </details>
     </div>
     <p id="upload-status" style="font-size:12px;color:#7a8ba8;min-height:18px;margin-top:4px"></p>
@@ -3124,6 +3127,7 @@ function renderLibrary() {
     ? `来源：GitHub 在线库（最新）· 共 ${libEntries.length} 个战术`
     : `在线读取失败，显示内置离线库 · 共 ${libEntries.length} 个战术`;
   let lastHeading = '';
+  const canDelete = !inTauri() && libSource === 'online' && !!localStorage.getItem(LIB_TOKEN_KEY);
   libEntries.forEach(t => {
     const heading = `${t.group} · ${t.category}`;
     if (heading !== lastHeading) {
@@ -3132,8 +3136,10 @@ function renderLibrary() {
       list.appendChild(h);
       lastHeading = heading;
     }
+    const row = document.createElement('div');
+    row.className = 'library-item';
     const btn = document.createElement('button');
-    btn.className = 'library-item';
+    btn.className = 'library-load';
     btn.textContent = t.name;
     if (t.frames) {
       const meta = document.createElement('span');
@@ -3142,7 +3148,17 @@ function renderLibrary() {
       btn.appendChild(meta);
     }
     btn.onclick = () => loadLibraryTactic(t);
-    list.appendChild(btn);
+    row.appendChild(btn);
+    if (canDelete) {
+      const del = document.createElement('button');
+      del.className = 'library-del';
+      del.textContent = '🗑';
+      del.title = `从在线战术库删除「${t.name}」（管理员）`;
+      del.setAttribute('aria-label', `删除 ${t.name}`);
+      del.onclick = () => deleteLibraryTactic(t);
+      row.appendChild(del);
+    }
+    list.appendChild(row);
   });
 }
 
@@ -3241,7 +3257,7 @@ function base64ToUtf8(b64) {
 }
 
 // Keeps 战术库/index.json in sync so readers never need the rate-limited API.
-async function updateLibraryIndex(headers, entry) {
+async function mutateLibraryIndex(headers, mutate) {
   const url = `https://api.github.com/repos/${LIB_REPO}/contents/${encodeURIComponent(LIB_ROOT)}/index.json`;
   const get = await fetch(url + '?ref=' + LIB_BRANCH, { headers });
   let manifest = { tactics: [] };
@@ -3253,10 +3269,9 @@ async function updateLibraryIndex(headers, entry) {
   } else if (get.status !== 404) {
     throw new Error('读取目录失败 HTTP ' + get.status);
   }
-  manifest.tactics = (manifest.tactics || []).filter(t => t.path !== entry.path);
-  manifest.tactics.push(entry);
+  mutate(manifest);
   const body = {
-    message: `战术库：更新目录 ${entry.group}/${entry.category}/${entry.name}`,
+    message: '战术库：更新目录',
     content: utf8ToBase64(JSON.stringify(manifest, null, 2) + '\n'),
     branch: LIB_BRANCH,
   };
@@ -3265,6 +3280,47 @@ async function updateLibraryIndex(headers, entry) {
   if (!put.ok) {
     const err = await put.json().catch(() => ({}));
     throw new Error(err.message || 'HTTP ' + put.status);
+  }
+}
+
+async function updateLibraryIndex(headers, entry) {
+  await mutateLibraryIndex(headers, m => {
+    m.tactics = (m.tactics || []).filter(t => t.path !== entry.path);
+    m.tactics.push(entry);
+  });
+}
+
+async function deleteLibraryTactic(t) {
+  const token = localStorage.getItem(LIB_TOKEN_KEY);
+  if (!token) { showInfo('请先在 ⬆️ 更新库 里填写管理员令牌'); return; }
+  if (!confirm(`从在线战术库删除「${t.group} / ${t.category} / ${t.name}」？所有用户刷新后将不再看到它。`)) return;
+  const headers = { Authorization: 'Bearer ' + token, Accept: 'application/vnd.github+json' };
+  const apiUrl = `https://api.github.com/repos/${LIB_REPO}/contents/${t.path.split('/').map(encodeURIComponent).join('/')}`;
+  try {
+    const get = await fetch(apiUrl + '?ref=' + LIB_BRANCH, { headers });
+    if (get.status === 401) throw new Error('令牌无效或已过期');
+    if (get.status === 403) throw new Error('令牌没有该仓库的写权限');
+    if (get.status !== 404 && !get.ok) throw new Error('GitHub 返回 HTTP ' + get.status);
+    if (get.ok) {
+      const sha = (await get.json()).sha;
+      const del = await fetch(apiUrl, {
+        method: 'DELETE', headers,
+        body: JSON.stringify({ message: `战术库：删除 ${t.group}/${t.category}/${t.name}`, sha, branch: LIB_BRANCH }),
+      });
+      if (!del.ok) {
+        const err = await del.json().catch(() => ({}));
+        throw new Error(err.message || 'HTTP ' + del.status);
+      }
+    }
+    await mutateLibraryIndex(headers, m => {
+      m.tactics = (m.tactics || []).filter(x => x.path !== t.path);
+    });
+    libEntries = libEntries.filter(x => x.path !== t.path);
+    renderLibrary();
+    showInfo(`已删除「${t.name}」`);
+  } catch (e) {
+    showInfo('删除失败：' + (e && e.message ? e.message : '网络错误'));
+    console.error(e);
   }
 }
 
