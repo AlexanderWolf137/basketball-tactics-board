@@ -118,13 +118,6 @@
       "name": "None",
       "frames": 1,
       "path": "战术库/男篮/边线球/None.json"
-    },
-    {
-      "group": "男篮",
-      "category": "23联防",
-      "name": "往返测试战术",
-      "frames": 4,
-      "path": "战术库/男篮/23联防/往返测试战术.json"
     }
   ]
 }
