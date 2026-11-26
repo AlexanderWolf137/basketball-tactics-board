@@ -118,6 +118,13 @@
       "name": "边线球-box-1",
       "frames": 4,
       "path": "战术库/男篮/23联防/边线球-box-1.json"
+    },
+    {
+      "group": "新生",
+      "category": "边线球",
+      "name": "box(case 1)",
+      "frames": 4,
+      "path": "战术库/新生/边线球/box(case 1).json"
     }
   ]
 }
