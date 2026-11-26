@@ -118,6 +118,13 @@
       "name": "box(case 1)",
       "frames": 4,
       "path": "战术库/新生/边线球/box(case 1).json"
+    },
+    {
+      "group": "新生",
+      "category": "边线球",
+      "name": "box(case 2)",
+      "frames": 5,
+      "path": "战术库/新生/边线球/box(case 2).json"
     }
   ]
 }
