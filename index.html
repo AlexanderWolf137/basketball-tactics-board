@@ -65,7 +65,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 #progress-bar { flex: 1; height: 6px; background: #0f3460; border-radius: 3px; cursor: pointer; position: relative; }
 #progress-fill { height: 100%; background: #e94560; border-radius: 3px; width: 0; transition: width .05s linear; }
 #progress-bar .handle { width: 14px; height: 14px; background: #e94560; border: 2px solid #fff; border-radius: 50%; position: absolute; top: 50%; transform: translate(-50%, -50%); cursor: grab; display: none; }
-#frame-info { font-size: 12px; color: #7a8ba8; min-width: 60px; text-align: right; }
+#frame-info { font-size: 12px; color: #7a8ba8; min-width: 60px; max-width: 180px; text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 #speed-select { background: #0f3460; color: #a0b4d0; border: 1px solid #0f3460; padding: 3px 6px; border-radius: 4px; font-size: 12px; cursor: pointer; }
 
 /* Context action bar — the touch stand-in for right-click / Esc / Del */
@@ -97,6 +97,24 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 #caption-count { flex-shrink: 0; font-size: 11px; color: #5a6b80; min-width: 42px; text-align: right; font-variant-numeric: tabular-nums; }
 #caption-clear { flex-shrink: 0; width: 24px; height: 24px; border-radius: 50%; border: 1px solid #0f3460; background: #0f3460; color: #7a8ba8; cursor: pointer; font-size: 11px; line-height: 1; display: flex; align-items: center; justify-content: center; transition: all .15s; }
 #caption-clear:hover { background: #e94560; border-color: #e94560; color: #fff; }
+
+/* Branch line chips — one independent frame line per chip */
+#branch-bar { display: flex; align-items: center; gap: 6px; padding: 6px 16px; background: #16213e; border-bottom: 1px solid #0f3460; overflow-x: auto; overflow-y: hidden; flex-wrap: nowrap; flex-shrink: 0; }
+#branch-bar .branch-tag { flex-shrink: 0; font-size: 11px; font-weight: 700; letter-spacing: .1em; color: #7a8ba8; padding: 3px 0; }
+.branch-chip { flex: 0 0 auto; display: flex; align-items: center; gap: 4px; padding: 4px 11px; border: 1px solid #0f3460; border-radius: 14px; background: #1a1a2e; color: #a0b4d0; font-size: 12px; cursor: pointer; white-space: nowrap; transition: all .15s; }
+.branch-chip:hover { border-color: #4a6fa5; color: #e0e0e0; }
+.branch-chip.active { background: #e94560; border-color: #e94560; color: #fff; box-shadow: 0 0 8px rgba(233,69,96,.3); }
+.branch-chip .chip-btn { width: 16px; height: 16px; border-radius: 50%; border: none; padding: 0; background: rgba(15,52,96,.9); color: #cfe0f5; cursor: pointer; font-size: 10px; line-height: 1; display: none; align-items: center; justify-content: center; }
+.branch-chip:hover .chip-btn { display: flex; }
+.branch-chip.active .chip-btn { background: rgba(0,0,0,.25); color: #fff; }
+.branch-chip .chip-del:hover { background: #6b1530; color: #ff8a9e; }
+.branch-chip.active .chip-del:hover { background: rgba(0,0,0,.45); color: #ff8a9e; }
+/* Touch has no hover: keep rename/delete reachable, same as frame thumbs */
+@media (hover: none) {
+  .branch-chip .chip-btn { display: flex; width: 22px; height: 22px; font-size: 12px; }
+}
+#add-branch-btn { flex: 0 0 auto; padding: 4px 11px; border: 1px dashed #0f3460; border-radius: 14px; background: transparent; color: #7a8ba8; font-size: 12px; cursor: pointer; white-space: nowrap; transition: all .15s; }
+#add-branch-btn:hover { border-color: #e94560; color: #e94560; }
 
 /* Frame list */
 #frame-list { display: flex; gap: 8px; padding: 10px 16px; overflow-x: auto; align-items: stretch; min-height: 80px; }
@@ -189,6 +207,10 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
   #frame-info { min-width: 46px; font-size: 11px; }
   #caption-bar { padding: 6px 10px; gap: 6px; }
   #caption-count { display: none; }
+  #branch-bar { padding: 5px 10px; gap: 5px; }
+  .branch-chip { padding: 6px 11px; }
+  #add-branch-btn { padding: 6px 11px; }
+  #frame-info { max-width: 110px; }
   #frame-list { padding: 8px 10px; gap: 6px; min-height: 66px; }
   .frame-thumb, #add-frame-btn { width: 88px; min-width: 88px; height: 50px; }
 }
@@ -218,6 +240,10 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
   #playback .ctrl-btn { width: 32px; height: 32px; font-size: 13px; }
   #caption-bar { padding: 4px 10px; }
   #caption-input { padding: 4px 8px; }
+  /* Vertical space is scarce: the chip row stays one slim scrollable line. */
+  #branch-bar { padding: 3px 10px; gap: 5px; }
+  .branch-chip { padding: 2px 9px; font-size: 11px; }
+  #add-branch-btn { padding: 2px 9px; font-size: 11px; }
   #frame-list { padding: 6px 10px; min-height: 56px; }
   .frame-thumb, #add-frame-btn { width: 78px; min-width: 78px; height: 42px; }
   #action-bar { padding: 5px 10px; flex-wrap: nowrap; gap: 8px; }
@@ -398,6 +424,10 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
     <span id="caption-count">0/80</span>
     <button id="caption-clear" title="清空本帧字幕">✕</button>
   </div>
+  <div id="branch-bar">
+    <span class="branch-tag">线路</span>
+    <button id="add-branch-btn" onclick="createBranch()" title="从当前帧分叉：把当前线路的全部帧复制成一条独立新线，之后互不影响">＋ 分支</button>
+  </div>
   <div id="frame-list">
     <div class="frame-thumb active" data-frame="0">
       <canvas width="100" height="60"></canvas>
@@ -570,9 +600,10 @@ function defaultFrame() {
 }
 
 const state = {
-  tactic: { name: '新战术', courtType: 'half', frames: [defaultFrame()] },
+  tactic: { name: '新战术', courtType: 'half', frames: [defaultFrame()], branches: [] },
   courtStates: { half: null, full: null }, // independent state per court type
   currentFrameIdx: 0,
+  activeBranchId: null,
   tool: 'select',
   currentArrowColor: '#FFD700',
   interaction: { type: 'idle', data: {} },
@@ -584,7 +615,14 @@ const state = {
   playerNames: { offense: ['1','2','3','4','5'], defense: ['1','2','3','4','5'] },
 };
 
-function currentFrame() { return state.tactic.frames[state.currentFrameIdx]; }
+function activeBranch() {
+  return (state.tactic.branches || []).find(b => b.id === state.activeBranchId) || null;
+}
+function activeFrames() {
+  const b = activeBranch();
+  return b ? b.frames : state.tactic.frames;
+}
+function currentFrame() { return activeFrames()[state.currentFrameIdx]; }
 function courtArea() {
   const b = CFG.court.border, t = CFG.court.topOffset;
   if (state.tactic.courtType === 'full') {
@@ -723,7 +761,8 @@ function undo() {
   if (!state.undoStack.length) return;
   state.redoStack.push(JSON.stringify(state.tactic));
   state.tactic = JSON.parse(state.undoStack.pop());
-  state.currentFrameIdx = clamp(state.currentFrameIdx, 0, state.tactic.frames.length - 1);
+  normalizeActiveBranch();
+  state.currentFrameIdx = clamp(state.currentFrameIdx, 0, activeFrames().length - 1);
   state.selectedArrowId = null;
   state.selectedPlayerId = null;
   renderAll();
@@ -734,7 +773,8 @@ function redo() {
   if (!state.redoStack.length) return;
   state.undoStack.push(JSON.stringify(state.tactic));
   state.tactic = JSON.parse(state.redoStack.pop());
-  state.currentFrameIdx = clamp(state.currentFrameIdx, 0, state.tactic.frames.length - 1);
+  normalizeActiveBranch();
+  state.currentFrameIdx = clamp(state.currentFrameIdx, 0, activeFrames().length - 1);
   state.selectedArrowId = null;
   state.selectedPlayerId = null;
   renderAll();
@@ -1396,7 +1436,7 @@ function addFrame() {
     newFrame.ball = { ...frame.ball };
   }
 
-  state.tactic.frames.splice(state.currentFrameIdx + 1, 0, newFrame);
+  activeFrames().splice(state.currentFrameIdx + 1, 0, newFrame);
   state.currentFrameIdx++;
   state.selectedArrowId = null;
   state.selectedPlayerId = null;
@@ -1407,11 +1447,11 @@ function addFrame() {
 
 function deleteFrame(idx, event) {
   if (event) event.stopPropagation();
-  if (state.tactic.frames.length <= 1) { showInfo('至少保留一帧'); return; }
+  if (activeFrames().length <= 1) { showInfo('至少保留一帧'); return; }
   saveUndo();
-  state.tactic.frames.splice(idx, 1);
-  if (state.currentFrameIdx >= state.tactic.frames.length) {
-    state.currentFrameIdx = state.tactic.frames.length - 1;
+  activeFrames().splice(idx, 1);
+  if (state.currentFrameIdx >= activeFrames().length) {
+    state.currentFrameIdx = activeFrames().length - 1;
   }
   state.selectedArrowId = null;
   state.selectedPlayerId = null;
@@ -1422,12 +1462,12 @@ function deleteFrame(idx, event) {
 
 function duplicateFrame(idx) {
   saveUndo();
-  const src = state.tactic.frames[idx];
+  const src = activeFrames()[idx];
   const dup = JSON.parse(JSON.stringify(src));
   dup.id = uid();
   dup.players.forEach(p => p.id = uid());
   dup.actions.forEach(a => a.id = uid());
-  state.tactic.frames.splice(idx + 1, 0, dup);
+  activeFrames().splice(idx + 1, 0, dup);
   state.currentFrameIdx = idx + 1;
   renderAll();
   updateFrameList();
@@ -1435,7 +1475,7 @@ function duplicateFrame(idx) {
 }
 
 function switchFrame(idx) {
-  if (idx < 0 || idx >= state.tactic.frames.length) return;
+  if (idx < 0 || idx >= activeFrames().length) return;
   state.currentFrameIdx = idx;
   state.selectedArrowId = null;
   state.selectedPlayerId = null;
@@ -1452,7 +1492,7 @@ function updateFrameList() {
   list.querySelectorAll('.frame-thumb').forEach(el => el.remove());
 
   // Create thumbs
-  state.tactic.frames.forEach((frame, idx) => {
+  activeFrames().forEach((frame, idx) => {
     const thumb = document.createElement('div');
     thumb.className = 'frame-thumb' + (idx === state.currentFrameIdx ? ' active' : '');
     thumb.dataset.frame = idx;
@@ -1477,7 +1517,7 @@ function updateFrameList() {
     chip.style.display = cap ? 'flex' : 'none';
     thumb.appendChild(chip);
 
-    if (state.tactic.frames.length > 1) {
+    if (activeFrames().length > 1) {
       const delBtn = document.createElement('button');
       delBtn.className = 'frame-delete';
       delBtn.textContent = '✕';
@@ -1492,7 +1532,7 @@ function updateFrameList() {
     dupBtn.title = '复制本帧';
     dupBtn.onclick = (e) => { e.stopPropagation(); duplicateFrame(idx); };
     thumb.appendChild(dupBtn);
-    if (state.tactic.frames.length <= 1) thumb.classList.add('no-delete');
+    if (activeFrames().length <= 1) thumb.classList.add('no-delete');
 
     list.insertBefore(thumb, addBtn);
 
@@ -1501,9 +1541,19 @@ function updateFrameList() {
   });
 
   // Update frame info
-  document.getElementById('frame-info').textContent = `帧 ${state.currentFrameIdx + 1}/${state.tactic.frames.length}`;
+  const info = document.getElementById('frame-info');
+  info.textContent = frameInfoText();
+  const ab = activeBranch();
+  info.title = ab ? `当前线路：${ab.name}` : '当前线路：主线';
+  updateBranchBar();
   syncCaptionUI();
   syncNameUI();
+}
+
+function frameInfoText() {
+  const b = activeBranch();
+  const label = b ? (b.name.length > 8 ? b.name.slice(0, 8) + '…' : b.name) + ' · ' : '';
+  return `${label}帧 ${state.currentFrameIdx + 1}/${activeFrames().length}`;
 }
 
 function syncCaptionUI() {
@@ -1587,6 +1637,119 @@ function drawThumbnail(miniCanvas, frame) {
 }
 
 // ============================================================
+// BRANCHES: independent alternative lines forked from a frame
+// ============================================================
+// A branch owns a full deep copy of the line it was created from (including
+// the opening frames); after creation the lines never sync again.
+function normalizeActiveBranch() {
+  const bs = state.tactic.branches || [];
+  if (state.activeBranchId && !bs.some(b => b.id === state.activeBranchId)) state.activeBranchId = null;
+}
+
+function nextBranchName() {
+  const bs = state.tactic.branches || [];
+  const used = new Set(bs.map(b => b.name));
+  let n = bs.length + 1;
+  while (used.has('分支' + n)) n++;
+  return '分支' + n;
+}
+
+function createBranch() {
+  stopPlayback();
+  saveUndo();
+  if (!Array.isArray(state.tactic.branches)) state.tactic.branches = [];
+  const branch = { id: uid(), name: nextBranchName(), frames: JSON.parse(JSON.stringify(activeFrames())) };
+  state.tactic.branches.push(branch);
+  state.activeBranchId = branch.id;
+  // Selection stays on the fork frame; edits from here on only touch this line.
+  state.selectedArrowId = null;
+  state.selectedPlayerId = null;
+  state.interaction = { type: 'idle', data: {} };
+  renderAll();
+  updateFrameList();
+  showInfo(`已创建「${branch.name}」：整线已复制，从帧 ${state.currentFrameIdx + 1} 起独立编辑`);
+}
+
+function switchBranch(id) {
+  if (id === state.activeBranchId) return;
+  if (id && !(state.tactic.branches || []).some(b => b.id === id)) return;
+  stopPlayback();
+  state.activeBranchId = id;
+  state.currentFrameIdx = clamp(state.currentFrameIdx, 0, activeFrames().length - 1);
+  state.selectedArrowId = null;
+  state.selectedPlayerId = null;
+  state.interaction = { type: 'idle', data: {} };
+  renderAll();
+  updateFrameList();
+}
+
+function renameBranch(id) {
+  const b = (state.tactic.branches || []).find(x => x.id === id);
+  if (!b) return;
+  const input = prompt('分支名称（最多 20 字）', b.name);
+  if (input === null) return;
+  const name = input.trim().slice(0, 20);
+  if (!name || name === b.name) return;
+  saveUndo();
+  b.name = name;
+  updateFrameList();
+}
+
+function deleteBranch(id) {
+  const bs = state.tactic.branches || [];
+  const b = bs.find(x => x.id === id);
+  if (!b) return;
+  if (!confirm(`删除分支「${b.name}」？它的 ${b.frames.length} 帧将全部丢失，主线不受影响。`)) return;
+  stopPlayback();
+  saveUndo();
+  state.tactic.branches = bs.filter(x => x.id !== id);
+  if (state.activeBranchId === id) {
+    state.activeBranchId = null;
+    state.currentFrameIdx = clamp(state.currentFrameIdx, 0, state.tactic.frames.length - 1);
+  }
+  state.selectedArrowId = null;
+  state.selectedPlayerId = null;
+  state.interaction = { type: 'idle', data: {} };
+  renderAll();
+  updateFrameList();
+  showInfo(`已删除分支「${b.name}」`);
+}
+
+function updateBranchBar() {
+  const bar = document.getElementById('branch-bar');
+  const addBtn = document.getElementById('add-branch-btn');
+  bar.querySelectorAll('.branch-chip').forEach(el => el.remove());
+  const lines = [{ id: null, name: '主线' }, ...(state.tactic.branches || [])];
+  lines.forEach(line => {
+    const chip = document.createElement('div');
+    chip.className = 'branch-chip' + (line.id === state.activeBranchId ? ' active' : '');
+    chip.title = line.id
+      ? `切换到「${line.name}」（独立线路，${line.frames.length} 帧）· 双击改名`
+      : '切换到主线';
+    const label = document.createElement('span');
+    label.textContent = line.name;
+    chip.appendChild(label);
+    chip.onclick = () => switchBranch(line.id);
+    if (line.id) {
+      chip.ondblclick = () => renameBranch(line.id);
+      const edit = document.createElement('button');
+      edit.className = 'chip-btn chip-edit';
+      edit.textContent = '✎';
+      edit.title = '重命名分支';
+      edit.onclick = (e) => { e.stopPropagation(); renameBranch(line.id); };
+      chip.appendChild(edit);
+      const del = document.createElement('button');
+      del.className = 'chip-btn chip-del';
+      del.textContent = '✕';
+      del.title = '删除分支';
+      del.onclick = (e) => { e.stopPropagation(); deleteBranch(line.id); };
+      chip.appendChild(del);
+    }
+    bar.insertBefore(chip, addBtn);
+  });
+}
+
+// ============================================================
 // PHASE 3: ANIMATION SYSTEM
 // ============================================================
 function togglePlay() {
@@ -1598,7 +1761,7 @@ function togglePlay() {
 }
 
 function startPlayback() {
-  if (state.tactic.frames.length <= 1) { showInfo('至少需要2帧才能播放'); return; }
+  if (activeFrames().length <= 1) { showInfo('至少需要2帧才能播放'); return; }
   state.playback.playing = true;
   state.playback.startTime = performance.now();
   state.playback.progress = 0;
@@ -1638,7 +1801,7 @@ function animateLoop() {
 
   if (state.playback.progress >= 1) {
     // Move to next frame
-    if (state.currentFrameIdx < state.tactic.frames.length - 1) {
+    if (state.currentFrameIdx < activeFrames().length - 1) {
       state.currentFrameIdx++;
       state.playback.startTime = now;
       state.playback.progress = 0;
@@ -1656,10 +1819,10 @@ function animateLoop() {
 }
 
 function updateProgress() {
-  const totalFrames = state.tactic.frames.length;
+  const totalFrames = activeFrames().length;
   const overallProgress = (state.currentFrameIdx + state.playback.progress) / totalFrames;
   document.getElementById('progress-fill').style.width = (overallProgress * 100) + '%';
-  document.getElementById('frame-info').textContent = `帧 ${state.currentFrameIdx + 1}/${totalFrames}`;
+  document.getElementById('frame-info').textContent = frameInfoText();
 }
 
 function prevFrame() {
@@ -1669,7 +1832,7 @@ function prevFrame() {
 }
 
 function nextFrame() {
-  if (state.currentFrameIdx < state.tactic.frames.length - 1) {
+  if (state.currentFrameIdx < activeFrames().length - 1) {
     switchFrame(state.currentFrameIdx + 1);
   }
 }
@@ -1679,13 +1842,13 @@ function setPlaybackSpeed(val) {
 }
 
 function startProgressDrag(e) {
-  if (state.tactic.frames.length <= 1) return;
+  if (activeFrames().length <= 1) return;
   const bar = document.getElementById('progress-bar');
   const rect = bar.getBoundingClientRect();
 
   function update(ev) {
     const x = clamp((ev.clientX - rect.left) / rect.width, 0, 1);
-    const totalFrames = state.tactic.frames.length;
+    const totalFrames = activeFrames().length;
     const frameFloat = x * totalFrames;
     const frameIdx = clamp(Math.floor(frameFloat), 0, totalFrames - 1);
     if (frameIdx !== state.currentFrameIdx) {
@@ -1721,7 +1884,7 @@ function exportCurrentPNG() {
 async function exportAllPNG() {
   closeExportMenu();
   const savedIdx = state.currentFrameIdx;
-  const frames = state.tactic.frames;
+  const frames = activeFrames();
   if (inTauri()) {
     const dir = await window.__TAURI__.dialog.open({ directory: true, title: '选择全部帧 PNG 的导出文件夹' });
     if (!dir) return;
@@ -1788,7 +1951,7 @@ async function getGifWorkerUrl() {
 async function exportGIF() {
   closeExportMenu();
   if (typeof GIF === 'undefined') { showInfo('GIF.js 库未加载，请检查网络'); return; }
-  if (state.tactic.frames.length < 2) { showInfo('至少需要2帧'); return; }
+  if (activeFrames().length < 2) { showInfo('至少需要2帧'); return; }
 
   showInfo('正在准备 GIF 编码器…');
   const workerScript = await getGifWorkerUrl();
@@ -1824,7 +1987,7 @@ async function exportGIF() {
   const fps = 15;
   // GIF delays live on a 10 ms grid, so snap the tick before counting samples.
   const baseDelay = Math.round(1000 / fps / 10) * 10;
-  const counts = state.tactic.frames.map(f => Math.max(2, Math.round((f.duration || 1500) / baseDelay)));
+  const counts = activeFrames().map(f => Math.max(2, Math.round((f.duration || 1500) / baseDelay)));
   // gif.js holds every frame as raw RGBA (~2 MB each here), so a long tactic
   // trades smoothness for a bounded footprint: fewer samples, longer delays,
   // same total duration.
@@ -1953,8 +2116,14 @@ async function saveProject() {
 }
 
 function applyProjectData(data) {
+  // Old files have no branches; drop malformed entries so a bad line can't
+  // break the whole load.
+  data.branches = Array.isArray(data.branches)
+    ? data.branches.filter(b => b && b.id && Array.isArray(b.frames) && b.frames.length)
+    : [];
   state.tactic = data;
   state.currentFrameIdx = 0;
+  state.activeBranchId = null;
   state.selectedArrowId = null;
   state.selectedPlayerId = null;
   state.interaction = { type: 'idle', data: {} };
@@ -2241,20 +2410,24 @@ function setCourtType(type) {
   state.courtStates[oldType] = JSON.parse(JSON.stringify({
     tactic: state.tactic,
     currentFrameIdx: state.currentFrameIdx,
+    activeBranchId: state.activeBranchId,
   }));
   // Switch and restore/load
   if (state.courtStates[type]) {
     const saved = state.courtStates[type];
     state.tactic = saved.tactic;
     state.currentFrameIdx = saved.currentFrameIdx;
+    state.activeBranchId = saved.activeBranchId || null;
   } else {
     // First time visiting this court type - fresh state
     const name = state.tactic.name;
-    state.tactic = { name, courtType: type, frames: [defaultFrame()] };
+    state.tactic = { name, courtType: type, frames: [defaultFrame()], branches: [] };
     state.currentFrameIdx = 0;
+    state.activeBranchId = null;
     initPlayers();
   }
   state.tactic.courtType = type;
+  normalizeActiveBranch();
   state.selectedArrowId = null;
   state.selectedPlayerId = null;
   state.interaction = { type: 'idle', data: {} };
